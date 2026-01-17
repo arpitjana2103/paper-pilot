@@ -1,0 +1,22 @@
+{
+    "name": "paper-pilot",
+    "version": "1.0.0",
+    "description": "ai pdf reader application",
+    "license": "ISC",
+    "author": "Arpit Jana",
+    "type": "commonjs",
+    "main": "server.js",
+    "scripts": {
+        "start:dev": "set NODE_ENV=development&& nodemon server.js",
+        "start:prod": "set NODE_ENV=production&& nodemon server.js"
+    },
+    "dependencies": {
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "mongoose": "^9.1.4",
+        "qs": "^6.14.1"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.11"
+    }
+}
