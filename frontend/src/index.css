@@ -1,1 +1,26 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Onest:wght@100..900&display=swap");
+
 @import "tailwindcss";
+
+@theme {
+  --font-onest: "Onest", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+@layer base {
+  html {
+    @apply font-onest;
+  }
+
+  body {
+    @apply bg-slate-50;
+  }
+}
+
+/* Use for utility compositions */
+@layer components {
+}
+
+/* Highest Priority */
+@layer utilities {
+}
