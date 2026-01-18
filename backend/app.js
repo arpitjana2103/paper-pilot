@@ -33,6 +33,9 @@ app.get("/", (req, res) => {
     res.send("Server is breathing");
 });
 
+// Global Error Handelling Meddleware
+app.use(globalErrorHandeller);
+
 module.exports = app;
 
 // modules required :
