@@ -19,3 +19,6 @@ app.get("/", (req, res) => {
 });
 
 module.exports = app;
+
+// modules required :
+// bcrypt, cors, dotenv, express, express-validator jsonwebtoken mongoose multer pdf-parse @google/genai
