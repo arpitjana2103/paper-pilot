@@ -13,6 +13,9 @@ app.set("query parser", function (str) {
 // ‍[ note : Parses incoming JSON requests into JavaScript objects ]
 app.use(express.json());
 
+// [ note : Parse URL-encoded form data into req.body ]
+app.use(express.urlencoded({ extended: true }));
+
 // CORS Middleware
 app.use(
     cors({
@@ -23,7 +26,9 @@ app.use(
     }),
 );
 
-// The missing piece
+// [ note : Serve static files from /uploads folder
+app.use("/uploads", express.static("uploads"));
+
 app.get("/", (req, res) => {
     res.send("Server is breathing");
 });
