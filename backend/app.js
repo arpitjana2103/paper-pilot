@@ -33,6 +33,11 @@ app.get("/", (req, res) => {
     res.send("Server is breathing");
 });
 
+// Handellling Unhandled Routes
+app.use((req, res, next) => {
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
 // Global Error Handelling Meddleware
 app.use(globalErrorHandeller);
 
