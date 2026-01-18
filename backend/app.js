@@ -13,6 +13,16 @@ app.set("query parser", function (str) {
 // ‍[ note : Parses incoming JSON requests into JavaScript objects ]
 app.use(express.json());
 
+// CORS Middleware
+app.use(
+    cors({
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
+    }),
+);
+
 // The missing piece
 app.get("/", (req, res) => {
     res.send("Server is breathing");
