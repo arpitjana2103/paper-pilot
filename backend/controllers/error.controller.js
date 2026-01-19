@@ -1,3 +1,5 @@
+const helper = require("./../utils/helper.util");
+
 exports.AppError = class extends Error {
     constructor(message, statusCode) {
         super(message);

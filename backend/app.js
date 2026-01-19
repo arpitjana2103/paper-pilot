@@ -1,5 +1,12 @@
 const express = require("express");
 const qs = require("qs");
+const cors = require("cors");
+const {
+    globalErrorHandeller,
+    AppError,
+} = require("./controllers/error.controller");
+
+const authRoutes = require("./routes/auth.route");
 
 const app = express();
 
@@ -32,6 +39,9 @@ app.use("/uploads", express.static("uploads"));
 app.get("/", (req, res) => {
     res.send("Server is breathing");
 });
+
+// Routes Middleware
+app.use("/api/v1/auth", authRoutes);
 
 // Handellling Unhandled Routes
 app.use((req, res, next) => {

@@ -1,5 +1,8 @@
 const jwt = require("jsonwebtoken");
+
 const helper = require("./../utils/helper.util");
+const { catchAsyncErrors } = require("./error.controller");
+const User = require("./../models/user.model");
 
 const signToken = function (payload) {
     const jwtSecreatKey = process.env.JWT_SECRET;
@@ -34,3 +37,25 @@ const signAndSendToken = function (user, statusCode, res) {
         },
     });
 };
+
+// @desc    User Signup
+// @route   POST /api/v1/auth/signup
+// @access  Public
+exports.signup = catchAsyncErrors(async function (req, res, next) {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: req.body.email });
+    if (existingUser) {
+        return res.status(400).json({
+            status: "fail",
+            message: "User with this email already exists",
+        });
+    }
+
+    const user = await User.create({
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+        passwordConfirm: req.body.passwordConfirm,
+    });
+    signAndSendToken(user, 201, res);
+});

@@ -9,7 +9,7 @@ const connectDB = async function () {
     console.log("⌛ connecting to database...");
 
     try {
-        await mongoose.connect(DB);
+        await mongoose.connect(DBLOC);
         console.log("✅ database connecting successfull");
         console.log(`🔗 api url : http://127.0.0.1:${PORT}`);
     } catch (error) {

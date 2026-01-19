@@ -1,4 +1,5 @@
 const { default: mongoose } = require("mongoose");
+const validator = require("validator");
 
 const validatePassword = function (password) {
     return (
