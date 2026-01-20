@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const helper = require("./../utils/helper.util");
 const { catchAsyncErrors } = require("./error.controller");
 const User = require("./../models/user.model");
+const { sendEmail } = require("./../utils/email.util");
 
 const signToken = function (payload) {
     const jwtSecreatKey = process.env.JWT_SECRET;
@@ -34,7 +35,6 @@ const signAndSendToken = function (user, statusCode, res) {
                 name: user.name,
                 email: user.email,
             },
-            user2: user,
         },
     });
 };
@@ -44,19 +44,103 @@ const signAndSendToken = function (user, statusCode, res) {
 // @access  Public
 
 exports.signup = catchAsyncErrors(async function (req, res, next) {
+    // [1] Check if user with the email already exists
     const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) {
+
+    // verified existing user
+    if (existingUser && existingUser.isVerified) {
         return res.status(400).json({
             status: "fail",
             message: "User with this email already exists",
         });
     }
 
+    // not verified existing user - delete the old unverified user
+    if (existingUser && !existingUser.isVerified) {
+        await existingUser.deleteOne();
+    }
+
+    // [2] Generate 6-digit OTP
+    const otp = helper.getRandomAlphabets(6);
+    const otpExpires = Date.now() + helper.toMs("10m"); // 10 minutes
+
+    // [3] Create User
     const user = await User.create({
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
         passwordConfirm: req.body.passwordConfirm,
+        isVerified: false,
+        emailOtp: otp,
+        emailOtpExpires: otpExpires,
     });
-    signAndSendToken(user, 201, res);
+
+    // [4] Send OTP email
+    const message = `Dear ${user.name || "User"},\n\nWelcome to Paper Pilot!\n\nWe received a request to verify your email address. Use the One-Time Password (OTP) below to complete your registration:\nOTP: ${otp}\nThis code is valid for the next 10 minutes.\nIf you did not request this, you can safely ignore this email.\n\nThanks,\nThe Paper Pilot Team`;
+
+    await sendEmail({
+        to: user.email,
+        subject: "Verify your Paper Pilot account",
+        message: message,
+    });
+
+    return res.status(201).json({
+        status: "success",
+        message:
+            "User created. OTP sent to email. Please verify to complete registration.",
+        data: { email: user.email },
+    });
+});
+
+// @desc    Verify Email OTP
+// @route   POST /api/v1/auth/verify-email
+// @access  Public
+
+exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
+    // [1] Validate input
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+        return res
+            .status(400)
+            .json({ status: "fail", message: "Email and otp are required" });
+    }
+
+    // [2] Find user
+    const user = await User.findOne({ email }).select(
+        "+emailOtp +emailOtpExpires +isVerified",
+    );
+
+    if (!user)
+        return res
+            .status(400)
+            .json({ status: "fail", message: "No user found with this email" });
+
+    // [3] Verify OTP
+    if (user.isVerified)
+        return res
+            .status(400)
+            .json({ status: "fail", message: "User already verified" });
+
+    if (
+        !user.emailOtp ||
+        !user.emailOtpExpires ||
+        user.emailOtpExpires < Date.now()
+    ) {
+        return res.status(400).json({
+            status: "fail",
+            message: "OTP expired or not found. Please request a new OTP.",
+        });
+    }
+
+    if (user.emailOtp !== otp) {
+        return res.status(400).json({ status: "fail", message: "Invalid OTP" });
+    }
+
+    user.isVerified = true;
+    user.emailOtp = undefined;
+    user.emailOtpExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    // Sign and send token after successful verification
+    signAndSendToken(user, 200, res);
 });

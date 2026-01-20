@@ -53,28 +53,33 @@ const userSchema = new mongoose.Schema({
                 "ERR: password & passwordConfirm filed value should be same",
         },
     },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    emailOtp: String,
+    emailOtpExpires: Date,
 });
 
 ////////////////////////////////////////
 // DOCUMENT MEDDLEWARE / HOOK //////////
 
 // runs before Model.prototype.save() and Model.create()
-userSchema.pre("save", function (next) {
+userSchema.pre("save", async function (next) {
     // Only run the Function if the password has been changes
     // For Ex. ( if user is changing the email, no need to hash the password in that case)
-    if (!this.isModified("password")) return next();
+    if (!this.isModified("password")) return;
 
-    // Hash Password
-    bcrypt.hash(this.password, 12).then((hashedPassword) => {
-        this.password = hashedPassword;
-        this.passwordConfirm = undefined;
-        next();
-    });
+    // Hash password
+    this.password = await bcrypt.hash(this.password, 12);
+    this.passwordConfirm = undefined;
 });
 
 // runs after Model.prototype.save() and Model.create()
 userSchema.post("save", function (doc, next) {
     doc.password = undefined;
+    doc.emailOtpExpires = undefined;
+    doc.emailOtp = undefined;
     doc.__v = undefined;
     next();
 });
