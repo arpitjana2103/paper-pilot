@@ -1,6 +1,4 @@
-const dotenv = require("dotenv");
 const { default: mongoose } = require("mongoose");
-dotenv.config({ path: "./config.env" });
 
 const DBLOC = process.env.DATABASE_LOCAL;
 const PORT = process.env.PORT;
