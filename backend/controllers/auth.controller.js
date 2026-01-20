@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const helper = require("./../utils/helper.util");
 const { catchAsyncErrors } = require("./error.controller");
 const User = require("./../models/user.model");
-const { sendEmail } = require("./../utils/email.util");
+const { sendEmail, createOtpMessage } = require("./../utils/email.util");
 
 const signToken = function (payload) {
     const jwtSecreatKey = process.env.JWT_SECRET;
@@ -62,7 +62,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
 
     // [2] Generate 6-digit OTP
     const otp = helper.getRandomAlphabets(6);
-    const otpExpires = Date.now() + helper.toMs("10m"); // 10 minutes
+    const otpExpires = Date.now() + helper.toMs("30m"); // 10 minutes
 
     // [3] Create User
     const user = await User.create({
@@ -76,7 +76,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
     });
 
     // [4] Send OTP email
-    const message = `Dear ${user.name || "User"},\n\nWelcome to Paper Pilot!\n\nWe received a request to verify your email address. Use the One-Time Password (OTP) below to complete your registration:\nOTP: ${otp}\nThis code is valid for the next 10 minutes.\nIf you did not request this, you can safely ignore this email.\n\nThanks,\nThe Paper Pilot Team`;
+    const message = createOtpMessage(user.name, otp);
 
     await sendEmail({
         to: user.email,
@@ -106,9 +106,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [2] Find user
-    const user = await User.findOne({ email }).select(
-        "+emailOtp +emailOtpExpires +isVerified",
-    );
+    const user = await User.findOne({ email });
 
     if (!user)
         return res

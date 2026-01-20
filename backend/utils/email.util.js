@@ -36,4 +36,8 @@ const sendEmail = async function (options) {
     await transporter.sendMail(mailOPtions);
 };
 
-module.exports = { sendEmail };
+function createOtpMessage(userName, otp) {
+    return `Dear ${userName || "User"},\n\nWelcome to Paper Pilot!\n\nWe received a request to verify your email address. Use the One-Time Password (OTP) below to complete your registration:\nOTP: ${otp}\nThis code is valid for the next 30 minutes.\nIf you did not request this, you can safely ignore this email.\n\nThanks,\nThe Paper Pilot Team`;
+}
+
+module.exports = { sendEmail, createOtpMessage };

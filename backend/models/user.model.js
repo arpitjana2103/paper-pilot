@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, "ERR: password field can't be blank"],
+        select: false,
         validate: {
             validator: validatePassword,
             message:
