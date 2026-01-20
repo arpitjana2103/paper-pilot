@@ -85,6 +85,14 @@ userSchema.post("save", function (doc, next) {
     next();
 });
 
+////////////////////////////////////////
+// Instance Method /////////////////////
+// These Methods will be availabe for all the Documents
+
+userSchema.methods.verifyPassword = async function (rawPass, hashedPass) {
+    return await bcrypt.compare(rawPass, hashedPass);
+};
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;

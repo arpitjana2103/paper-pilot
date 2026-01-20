@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const helper = require("./../utils/helper.util");
-const { catchAsyncErrors } = require("./error.controller");
+const { catchAsyncErrors, AppError } = require("./error.controller");
 const User = require("./../models/user.model");
 const { sendEmail, createOtpMessage } = require("./../utils/email.util");
 
@@ -134,11 +134,41 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
         return res.status(400).json({ status: "fail", message: "Invalid OTP" });
     }
 
+    // [4] Update User
     user.isVerified = true;
     user.emailOtp = undefined;
     user.emailOtpExpires = undefined;
     await user.save({ validateBeforeSave: false });
 
-    // Sign and send token after successful verification
+    // [5] Sign and send token
+    signAndSendToken(user, 200, res);
+});
+
+// @desc    Login user
+// @route   POST /api/v1/auth/login
+// @access  Public
+
+exports.login = catchAsyncErrors(async function (req, res, next) {
+    // [1] Validate Input
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return next(new AppError("Please provide email and password!", 400));
+    }
+
+    // [2] Check if User exists and Passwrod is correct
+    const user = await User.findOne({ email: email }).select("+password");
+
+    // [3] Check if User is verified
+    if (user && !user.isVerified) {
+        await user.deleteOne();
+        return next(new AppError("User not exist", 401));
+    }
+
+    // [4] Check if User exist and password is correct
+    if (!user || !(await user.verifyPassword(password, user.password))) {
+        return next(new AppError("Incorrect Email or Password", 401));
+    }
+
+    // [5] If everything ok, send Token to client
     signAndSendToken(user, 200, res);
 });
