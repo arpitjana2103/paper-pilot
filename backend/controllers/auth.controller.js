@@ -34,6 +34,7 @@ const signAndSendToken = function (user, statusCode, res) {
                 name: user.name,
                 email: user.email,
             },
+            user2: user,
         },
     });
 };
@@ -41,8 +42,8 @@ const signAndSendToken = function (user, statusCode, res) {
 // @desc    User Signup
 // @route   POST /api/v1/auth/signup
 // @access  Public
+
 exports.signup = catchAsyncErrors(async function (req, res, next) {
-    // Check if user already exists
     const existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
         return res.status(400).json({

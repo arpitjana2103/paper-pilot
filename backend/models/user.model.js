@@ -1,5 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const validator = require("validator");
+const bcrypt = require("bcrypt");
 
 const validatePassword = function (password) {
     return (
@@ -52,6 +53,30 @@ const userSchema = new mongoose.Schema({
                 "ERR: password & passwordConfirm filed value should be same",
         },
     },
+});
+
+////////////////////////////////////////
+// DOCUMENT MEDDLEWARE / HOOK //////////
+
+// runs before Model.prototype.save() and Model.create()
+userSchema.pre("save", function (next) {
+    // Only run the Function if the password has been changes
+    // For Ex. ( if user is changing the email, no need to hash the password in that case)
+    if (!this.isModified("password")) return next();
+
+    // Hash Password
+    bcrypt.hash(this.password, 12).then((hashedPassword) => {
+        this.password = hashedPassword;
+        this.passwordConfirm = undefined;
+        next();
+    });
+});
+
+// runs after Model.prototype.save() and Model.create()
+userSchema.post("save", function (doc, next) {
+    doc.password = undefined;
+    doc.__v = undefined;
+    next();
 });
 
 const User = mongoose.model("User", userSchema);
