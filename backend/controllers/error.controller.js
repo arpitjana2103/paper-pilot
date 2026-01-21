@@ -7,7 +7,7 @@ exports.AppError = class extends Error {
         this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
         this.isOperational = true;
 
-        Error.captureStackTrace(this, this.constructor);
+        // Error.captureStackTrace(this, this.constructor);
 
         /*
         Error.captureStackTrace(this, this.constructor) : Explanation
@@ -48,6 +48,7 @@ exports.globalErrorHandeller = function (err, req, res, next) {
 
 function sendErrForDev(err, res) {
     return res.status(err.statusCode).json({
+        env: "development",
         status: "error",
         message: err.message,
         error: err,
@@ -68,11 +69,9 @@ function sendErrForProd(err, res) {
     // Exmple : Fail schema validation
     err = handleValidationError(err);
 
-    // Handle Email Sending Errors
-    err = handleEmailSendingError(err);
-
     if (err.isOperational) {
         return res.status(err.statusCode).json({
+            env: "production",
             status: err.status,
             message: err.message,
         });
@@ -80,6 +79,7 @@ function sendErrForProd(err, res) {
 
     // Unknown Error Handelling in Production
     return res.status(500).json({
+        env: "production",
         status: "error",
         message: "Something went very wrong !",
     });
@@ -106,13 +106,5 @@ function handleValidationError(err) {
         const { message } = err;
         return new exports.AppError(message, 400);
     }
-    return err;
-}
-
-function handleEmailSendingError(err) {
-    if (err["err-type"] === "emailError") {
-        return new exports.AppError("There was an error in Sending Email", 500);
-    }
-
     return err;
 }

@@ -2,6 +2,8 @@ const { default: mongoose } = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 
+const helper = require("./../utils/helper.util");
+
 const validatePassword = function (password) {
     return (
         password.length >= 5 &&
@@ -60,6 +62,8 @@ const userSchema = new mongoose.Schema({
     },
     emailOtp: String,
     emailOtpExpires: Date,
+    passwordResetToken: String,
+    passwordResetTokenExpires: Date,
 });
 
 ////////////////////////////////////////
@@ -91,6 +95,17 @@ userSchema.post("save", function (doc, next) {
 
 userSchema.methods.verifyPassword = async function (rawPass, hashedPass) {
     return await bcrypt.compare(rawPass, hashedPass);
+};
+
+////////////////////////////////////////
+// Instance Method /////////////////////
+// These Methods will be availabe for all the Documents
+
+userSchema.methods.createPasswordResetToken = function () {
+    const fourDigitNum = helper.getRandomNum(1000, 9999);
+    const fourAlphaStr = helper.getRandomAlphabets(4);
+    const token = `${fourDigitNum}-${fourAlphaStr}`;
+    return token;
 };
 
 const User = mongoose.model("User", userSchema);

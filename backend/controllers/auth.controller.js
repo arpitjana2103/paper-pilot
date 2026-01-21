@@ -1,9 +1,14 @@
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 const helper = require("./../utils/helper.util");
 const { catchAsyncErrors, AppError } = require("./error.controller");
 const User = require("./../models/user.model");
-const { sendEmail, createOtpMessage } = require("./../utils/email.util");
+const {
+    sendEmail,
+    createOtpMessage,
+    createPassResetMessage,
+} = require("./../utils/email.util");
 
 const signToken = function (payload) {
     const jwtSecreatKey = process.env.JWT_SECRET;
@@ -39,9 +44,11 @@ const signAndSendToken = function (user, statusCode, res) {
     });
 };
 
-// @desc    User Signup
-// @route   POST /api/v1/auth/signup
-// @access  Public
+/*
+    @desc    User Signup
+    @route   POST /api/v1/auth/signup
+    @access  Public
+*/
 
 exports.signup = catchAsyncErrors(async function (req, res, next) {
     // [1] Check if user with the email already exists
@@ -62,7 +69,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
 
     // [2] Generate 6-digit OTP
     const otp = helper.getRandomAlphabets(6);
-    const otpExpires = Date.now() + helper.toMs("30m"); // 10 minutes
+    const otpExpires = Date.now() + helper.toMs("30m"); // 30 minutes
 
     // [3] Create User
     const user = await User.create({
@@ -76,12 +83,10 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
     });
 
     // [4] Send OTP email
-    const message = createOtpMessage(user.name, otp);
-
     await sendEmail({
         to: user.email,
         subject: "Verify your Paper Pilot account",
-        message: message,
+        message: createOtpMessage(user.name, otp),
     });
 
     return res.status(201).json({
@@ -92,9 +97,11 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
     });
 });
 
-// @desc    Verify Email OTP
-// @route   POST /api/v1/auth/verify-email
-// @access  Public
+/*
+    @desc    Verify Email OTP
+    @route   POST /api/v1/auth/verify-email
+    @access  Public
+*/
 
 exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
     // [1] Validate input
@@ -144,9 +151,11 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
     signAndSendToken(user, 200, res);
 });
 
-// @desc    Login user
-// @route   POST /api/v1/auth/login
-// @access  Public
+/*
+    @desc    Login user
+    @route   POST /api/v1/auth/login
+    @access  Public
+*/
 
 exports.login = catchAsyncErrors(async function (req, res, next) {
     // [1] Validate Input
@@ -161,7 +170,7 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
     // [3] Check if User is verified
     if (user && !user.isVerified) {
         await user.deleteOne();
-        return next(new AppError("User not exist", 401));
+        return next(new AppError("No user found !", 404));
     }
 
     // [4] Check if User exist and password is correct
@@ -171,4 +180,56 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
 
     // [5] If everything ok, send Token to client
     signAndSendToken(user, 200, res);
+});
+
+/*
+    @desc    Forgot Password
+    @route   POST /api/v1/auth/forgot-passowrd
+    @access  Public
+*/
+
+exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
+    // [1] Get user based on POSTed Email
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+        return next(new AppError("No user found !", 404));
+    }
+
+    // [2] Check if User is verified
+    if (user && !user.isVerified) {
+        await user.deleteOne();
+        return next(new AppError("No user found !", 404));
+    }
+
+    // [3] Generate Random Reset Token
+    const resetToken = await user.createPasswordResetToken();
+
+    // [4] Update User
+    user.passwordResetToken = await bcrypt.hash(resetToken, 1);
+    user.passwordResetTokenExpires = new Date(Date.now() + helper.toMs("10m"));
+    await user.save({ validateBeforeSave: false });
+
+    // [5] Send Token to User-Email
+    const baseURL = `${req.protocol}://${req.get("host")}`;
+    const passwordResetURL = `${baseURL}/api/v1/auth/reset-password/${resetToken}`;
+
+    try {
+        await sendEmail({
+            to: user.email,
+            subject: "PaperPilot : Reset Password Instructions",
+            message: createPassResetMessage(user, passwordResetURL),
+        });
+
+        return res.status(200).json({
+            status: "success",
+            message:
+                "Password reset instructions have been sent to your registered email-address.",
+        });
+    } catch (error) {
+        user.passwordResetToken = undefined;
+        user.passwordResetTokenExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+        next(error);
+    }
 });
