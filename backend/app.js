@@ -1,6 +1,7 @@
 const express = require("express");
 const qs = require("qs");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const {
     globalErrorHandeller,
     AppError,
@@ -32,6 +33,9 @@ app.use(
         credentials: true,
     }),
 );
+
+// Cookie Parser Middleware
+app.use(cookieParser());
 
 // [ note : Serve static files from /uploads folder
 app.use("/uploads", express.static("uploads"));

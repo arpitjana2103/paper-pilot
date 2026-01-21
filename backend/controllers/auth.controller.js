@@ -207,7 +207,7 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
     const resetToken = await user.createPasswordResetToken();
 
     // [4] Update User
-    user.passwordResetToken = await bcrypt.hash(resetToken, 1);
+    user.passwordResetToken = await bcrypt.hash(resetToken, 12);
     user.passwordResetTokenExpires = new Date(Date.now() + helper.toMs("10m"));
     await user.save({ validateBeforeSave: false });
 
@@ -256,7 +256,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     // [3] Check if Token Invalid
     const rawToken = req.params.token;
     const hashedToken = user.passwordResetToken || "";
-    const isTokenInvalid = !(await user.varifyToken(rawToken, hashedToken));
+    const isTokenInvalid = !(await user.verifyToken(rawToken, hashedToken));
     if (isTokenInvalid) {
         return next(new AppError("Invalid Password-Reset-Link !", 400));
     }
@@ -284,6 +284,30 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
+    @desc    Update Password
+    @route   POST /api/v1/auth/update-passowrd
+    @access  Privet
+*/
+
+exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
+    // [1] Get user from collection
+    const user = await User.findById(req.user.id).select("+password");
+
+    // [2] Check if POSTed passowrd is correct
+    if (!(await user.verifyPassword(req.body.passwordCurrent, user.password))) {
+        return next(new AppError("Your current password is wrong.", 401));
+    }
+
+    // [3] Update the Password
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    await user.save();
+
+    // [4] Log in User and send JWT
+    signAndSendToken(user, 200, res);
+});
+
+/*
     [MIDDLEWARE]
     @desc    Auth Protect Middleware
     @access  Privet
@@ -294,7 +318,10 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
     let token = req.headers.authorization;
     if (token && token.startsWith("Bearer")) {
         token = token.split(" ")[1];
+    } else if (req.cookies?.jwt) {
+        token = req.cookies.jwt;
     }
+
     if (!token) {
         return next(new AppError("Please login to get access.", 401));
     }
@@ -313,6 +340,5 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
 
     // [4] bind user with reqObj
     req.user = user;
-
     next();
 });

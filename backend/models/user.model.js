@@ -97,7 +97,7 @@ userSchema.methods.verifyPassword = async function (rawPass, hashedPass) {
     return await bcrypt.compare(rawPass, hashedPass);
 };
 
-userSchema.methods.varifyToken = async function (rawToken, hashedToken) {
+userSchema.methods.verifyToken = async function (rawToken, hashedToken) {
     return await bcrypt.compare(rawToken, hashedToken);
 };
 
