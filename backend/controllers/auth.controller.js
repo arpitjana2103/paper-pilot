@@ -1,3 +1,4 @@
+const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
@@ -261,12 +262,11 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [4] Check if Token Expired
-    /*
-    Exmple : 
-    let say user forgetPassword at 8.00
-    then passwordResetLink is valid upto 8.10
-    if Date.now() is 8.15 then user is not allowed to reset password with that link
-    */
+    /* Exmple : 
+       let say user forgetPassword at 8.00
+       then passwordResetLink is valid upto 8.10
+       if Date.now() is 8.15 then user is not allowed to reset password with that link */
+
     const resetTokenExpiredAt = user.passwordResetTokenExpires.getTime();
     if (Date.now() > resetTokenExpiredAt) {
         return next(new AppError("Password-Reset-Link expired !", 400));
@@ -281,4 +281,38 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
 
     // [3] Log the user in, send JWT
     signAndSendToken(user, 200, res);
+});
+
+/*
+    [MIDDLEWARE]
+    @desc    Auth Protect Middleware
+    @access  Privet
+*/
+
+exports.authProtect = catchAsyncErrors(async function (req, res, next) {
+    // [1] Getting the Token
+    let token = req.headers.authorization;
+    if (token && token.startsWith("Bearer")) {
+        token = token.split(" ")[1];
+    }
+    if (!token) {
+        return next(new AppError("Please login to get access.", 401));
+    }
+
+    // [2] Verify token
+    const jwtSecretKey = process.env.JWT_SECRET;
+    const decoded = await promisify(jwt.verify)(token, jwtSecretKey);
+
+    // [3] Check if user still exists
+    /* Ex. What if user has been deleated in the mean-time and someone-else is
+       is trying to access stealing the token */
+    const user = await User.findById(decoded._id);
+    if (!user) {
+        return next(new AppError("The User donot exist.", 401));
+    }
+
+    // [4] bind user with reqObj
+    req.user = user;
+
+    next();
 });

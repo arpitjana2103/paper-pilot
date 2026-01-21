@@ -101,15 +101,22 @@ userSchema.methods.varifyToken = async function (rawToken, hashedToken) {
     return await bcrypt.compare(rawToken, hashedToken);
 };
 
-////////////////////////////////////////
-// Instance Method /////////////////////
-// These Methods will be availabe for all the Documents
-
 userSchema.methods.createPasswordResetToken = function () {
     const fourDigitNum = helper.getRandomNum(1000, 9999);
     const fourAlphaStr = helper.getRandomAlphabets(4);
     const token = `${fourDigitNum}-${fourAlphaStr}`;
     return token;
+};
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+    if (this.passwordChangedAt) {
+        const changedTimeStamp = parseInt(
+            this.passwordChangedAt.getTime() / 1000,
+            10,
+        );
+        return JWTTimestamp < changedTimeStamp;
+    }
+    return false;
 };
 
 const User = mongoose.model("User", userSchema);
