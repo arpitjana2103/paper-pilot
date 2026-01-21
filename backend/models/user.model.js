@@ -97,6 +97,10 @@ userSchema.methods.verifyPassword = async function (rawPass, hashedPass) {
     return await bcrypt.compare(rawPass, hashedPass);
 };
 
+userSchema.methods.varifyToken = async function (rawToken, hashedToken) {
+    return await bcrypt.compare(rawToken, hashedToken);
+};
+
 ////////////////////////////////////////
 // Instance Method /////////////////////
 // These Methods will be availabe for all the Documents

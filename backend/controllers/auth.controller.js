@@ -233,3 +233,52 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
         next(error);
     }
 });
+
+/*
+    @desc    Reset Password
+    @route   POST /api/v1/auth/reset-passowrd
+    @access  Public
+*/
+
+exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
+    // [1] Get User base on Email
+    const { email } = req.body;
+    const user = await User.findOne({
+        email: email,
+    });
+    if (!user) {
+        return next(
+            new AppError("No user found with the email-address provided."),
+        );
+    }
+
+    // [3] Check if Token Invalid
+    const rawToken = req.params.token;
+    const hashedToken = user.passwordResetToken || "";
+    const isTokenInvalid = !(await user.varifyToken(rawToken, hashedToken));
+    if (isTokenInvalid) {
+        return next(new AppError("Invalid Password-Reset-Link !", 400));
+    }
+
+    // [4] Check if Token Expired
+    /*
+    Exmple : 
+    let say user forgetPassword at 8.00
+    then passwordResetLink is valid upto 8.10
+    if Date.now() is 8.15 then user is not allowed to reset password with that link
+    */
+    const resetTokenExpiredAt = user.passwordResetTokenExpires.getTime();
+    if (Date.now() > resetTokenExpiredAt) {
+        return next(new AppError("Password-Reset-Link expired !", 400));
+    }
+
+    // [2] Set new password
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpires = undefined;
+    await user.save();
+
+    // [3] Log the user in, send JWT
+    signAndSendToken(user, 200, res);
+});

@@ -1,6 +1,3 @@
-const dotenv = require("dotenv");
-dotenv.config({ path: "./../config.env" });
-
 const nodemailer = require("nodemailer");
 const { AppError } = require("../controllers/error.controller");
 
