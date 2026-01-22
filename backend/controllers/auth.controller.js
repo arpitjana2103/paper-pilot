@@ -5,7 +5,12 @@ const bcrypt = require("bcrypt");
 const helper = require("./../utils/helper.util");
 const { catchAsyncErrors, AppError } = require("./error.controller");
 const User = require("./../models/user.model");
-const { JWT, EMAIL_OTP, HTTP } = require("./../configs/constants.config");
+const {
+    JWT,
+    OTP,
+    HTTP,
+    UNVERIFIED_USER_EXPIRES_IN,
+} = require("./../configs/constants.config");
 
 const {
     sendEmail,
@@ -53,10 +58,10 @@ const signAndSendToken = function (user, statusCode, res) {
 */
 
 exports.signup = catchAsyncErrors(async function (req, res, next) {
-    // [1] Check if user with the email already exists
+    // [1] Check if user exists
     const existingUser = await User.findOne({ email: req.body.email });
 
-    // verified existing user
+    // [2] Verified user already exists
     if (existingUser && existingUser.isVerified) {
         return res.status(HTTP.BAD_REQUEST).json({
             status: "fail",
@@ -64,36 +69,47 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
         });
     }
 
-    // not verified existing user - delete the old unverified user
+    // [3] Generate OTP
+    const otp = helper.getRandomAlphabets(6);
+    const otpExpires = Date.now() + helper.toMs("30m");
+
+    let user;
+
+    // [4] Update existing unverified user
     if (existingUser && !existingUser.isVerified) {
-        await existingUser.deleteOne();
+        existingUser.name = req.body.name;
+        existingUser.password = req.body.password;
+        existingUser.passwordConfirm = req.body.passwordConfirm;
+        existingUser.emailOtp = otp;
+        existingUser.emailOtpExpires = helper.expiresAt(OTP.EXPIRES_IN);
+        existingUser.expireAt = helper.expiresAt(UNVERIFIED_USER_EXPIRES_IN);
+
+        user = await existingUser.save({ validateBeforeSave: true });
     }
 
-    // [2] Generate 6-digit OTP
-    const otp = helper.getRandomAlphabets(EMAIL_OTP.LENGTH);
+    // [5] Create new user
+    if (!existingUser) {
+        user = await User.create({
+            name: req.body.name,
+            email: req.body.email,
+            password: req.body.password,
+            passwordConfirm: req.body.passwordConfirm,
+            isVerified: false,
+            emailOtp: otp,
+            emailOtpExpires: otpExpires,
+        });
+    }
 
-    // [3] Create User
-    const user = await User.create({
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.password,
-        passwordConfirm: req.body.passwordConfirm,
-        isVerified: false,
-        emailOtp: otp,
-        emailOtpExpires: helper.expiresAt(EMAIL_OTP.EXPIRES_IN),
-    });
-
-    // [4] Send OTP email
+    // [6] Send OTP email
     await sendEmail({
         to: user.email,
         subject: "Verify your Paper Pilot account",
         message: createOtpMessage(user.name, otp),
     });
 
-    return res.status(HTTP.CREATED).json({
+    return res.status(existingUser ? 200 : 201).json({
         status: "success",
-        message:
-            "User created. OTP sent to email. Please verify to complete registration.",
+        message: "OTP sent to email. Please verify to complete registration.",
         data: { email: user.email },
     });
 });
@@ -109,7 +125,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
     const { email, otp } = req.body;
     if (!email || !otp) {
         return res
-            .status(400)
+            .status(HTTP.BAD_REQUEST)
             .json({ status: "fail", message: "Email and otp are required" });
     }
 
@@ -118,13 +134,13 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
 
     if (!user)
         return res
-            .status(400)
+            .status(HTTP.BAD_REQUEST)
             .json({ status: "fail", message: "No user found with this email" });
 
     // [3] Verify OTP
     if (user.isVerified)
         return res
-            .status(400)
+            .status(HTTP.BAD_REQUEST)
             .json({ status: "fail", message: "User already verified" });
 
     if (
@@ -164,7 +180,12 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
     // [1] Validate Input
     const { email, password } = req.body;
     if (!email || !password) {
-        return next(new AppError("Please provide email and password!", 400));
+        return next(
+            new AppError(
+                "Please provide email and password!",
+                HTTP.BAD_REQUEST,
+            ),
+        );
     }
 
     // [2] Check if User exists and Passwrod is correct
@@ -173,12 +194,14 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
     // [3] Check if User is verified
     if (user && !user.isVerified) {
         await user.deleteOne();
-        return next(new AppError("No user found !", 404));
+        return next(new AppError("No user found !", HTTP.NOT_FOUND));
     }
 
     // [4] Check if User exist and password is correct
     if (!user || !(await user.verifyPassword(password, user.password))) {
-        return next(new AppError("Incorrect Email or Password", 401));
+        return next(
+            new AppError("Incorrect Email or Password", HTTP.UNAUTHORIZED),
+        );
     }
 
     // [5] If everything ok, send Token to client
@@ -196,13 +219,13 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-        return next(new AppError("No user found !", 404));
+        return next(new AppError("No user found !", HTTP.NOT_FOUND));
     }
 
     // [2] Check if User is verified
     if (user && !user.isVerified) {
         await user.deleteOne();
-        return next(new AppError("No user found !", 404));
+        return next(new AppError("No user found !", HTTP.NOT_FOUND));
     }
 
     // [3] Generate Random Reset Token
@@ -260,7 +283,9 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     const hashedToken = user.passwordResetToken || "";
     const isTokenInvalid = !(await user.verifyToken(rawToken, hashedToken));
     if (isTokenInvalid) {
-        return next(new AppError("Invalid Password-Reset-Link !", 400));
+        return next(
+            new AppError("Invalid Password-Reset-Link !", HTTP.BAD_REQUEST),
+        );
     }
 
     // [4] Check if Token Expired
@@ -271,7 +296,9 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
 
     const resetTokenExpiredAt = user.passwordResetTokenExpires.getTime();
     if (Date.now() > resetTokenExpiredAt) {
-        return next(new AppError("Password-Reset-Link expired !", 400));
+        return next(
+            new AppError("Password-Reset-Link expired !", HTTP.BAD_REQUEST),
+        );
     }
 
     // [2] Set new password
@@ -297,7 +324,9 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
 
     // [2] Check if POSTed passowrd is correct
     if (!(await user.verifyPassword(req.body.passwordCurrent, user.password))) {
-        return next(new AppError("Your current password is wrong.", 401));
+        return next(
+            new AppError("Your current password is wrong.", HTTP.UNAUTHORIZED),
+        );
     }
 
     // [3] Update the Password
@@ -325,7 +354,9 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
     }
 
     if (!token) {
-        return next(new AppError("Please login to get access.", 401));
+        return next(
+            new AppError("Please login to get access.", HTTP.UNAUTHORIZED),
+        );
     }
 
     // [2] Verify token
@@ -337,7 +368,7 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
        is trying to access stealing the token */
     const user = await User.findById(decoded._id);
     if (!user) {
-        return next(new AppError("The User donot exist.", 401));
+        return next(new AppError("The User donot exist.", HTTP.UNAUTHORIZED));
     }
 
     // [4] bind user with reqObj
