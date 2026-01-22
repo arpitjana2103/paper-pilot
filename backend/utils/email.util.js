@@ -9,22 +9,19 @@ const gmOptions = {
     },
 };
 
-const mtOptions = {
-    host: `sandbox.smtp.mailtrap.io`,
-    port: process.env.EMAIL_PORT,
-    auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-    },
+// Dev Test Emails
+const mailPitOptions = {
+    host: "localhost",
+    port: 1025,
 };
 
 // [1] Transporter
-const transporter = nodemailer.createTransport(mtOptions);
+const transporter = nodemailer.createTransport(mailPitOptions);
 
 const sendEmail = async function (options) {
     // [2] Define the Email Options
     const mailOPtions = {
-        from: { name: "Paper Pilot", address: "paperpilot.ai" },
+        from: { name: "Paper Pilot", address: "noreply@paperpilot.ai" },
         to: options.to,
         subject: options.subject,
         text: options.message,

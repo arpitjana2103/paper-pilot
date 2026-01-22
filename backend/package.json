@@ -9,6 +9,7 @@
     "scripts": {
         "start:dev": "set NODE_ENV=development&& nodemon server.js",
         "start:prod": "set NODE_ENV=production&& nodemon server.js",
+        "mailpit": "tools\\mailpit.exe",
         "lint": "eslint ."
     },
     "dependencies": {
