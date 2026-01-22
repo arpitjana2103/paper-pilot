@@ -1,5 +1,5 @@
 const { HTTP } = require("../configs/constants.config");
-const helper = require("./../utils/helper.util");
+const { runningOnDev, runningOnProd } = require("./../utils/helper.util");
 
 exports.AppError = class extends Error {
     constructor(message, statusCode) {
@@ -35,11 +35,11 @@ exports.globalErrorHandeller = function (err, req, res, next) {
     err.statusCode = err.statusCode || HTTP.SERVER_ERROR;
     err.status = err.status || "error";
 
-    if (helper.runningOnDev()) {
+    if (runningOnDev()) {
         return sendErrForDev(err, res);
     }
 
-    if (helper.runningOnProd()) {
+    if (runningOnProd()) {
         return sendErrForProd(err, res);
     }
 };

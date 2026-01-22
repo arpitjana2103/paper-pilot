@@ -2,7 +2,11 @@ const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
-const helper = require("./../utils/helper.util");
+const {
+    expiresAt,
+    runningOnProd,
+    getRandomAlphabets,
+} = require("./../utils/helper.util");
 const { catchAsyncErrors, AppError } = require("./error.controller");
 const User = require("./../models/user.model");
 const {
@@ -10,6 +14,7 @@ const {
     OTP,
     HTTP,
     UNVERIFIED_USER_EXPIRES_IN,
+    PASSWORD_RESET_TOKEN_EXPIRES_IN,
 } = require("./../configs/constants.config");
 
 const {
@@ -31,11 +36,11 @@ const signAndSendToken = function (user, statusCode, res) {
     const token = signToken({ _id: user._id });
 
     const cookieOptions = {
-        expires: helper.expiresAt(JWT.COOKIE_EXPIRES_IN),
+        expires: expiresAt(JWT.COOKIE_EXPIRES_IN),
         secure: false,
         httpOnly: true,
     };
-    if (helper.runningOnProd()) cookieOptions.secure = true;
+    if (runningOnProd()) cookieOptions.secure = true;
     res.cookie("jwt", token, cookieOptions);
 
     return res.status(statusCode).json({
@@ -70,7 +75,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [3] Generate OTP
-    const otp = helper.getRandomAlphabets(OTP.LENGTH);
+    const otp = getRandomAlphabets(OTP.LENGTH);
 
     let user;
 
@@ -80,8 +85,8 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
         existingUser.password = req.body.password;
         existingUser.passwordConfirm = req.body.passwordConfirm;
         existingUser.emailOtp = otp;
-        existingUser.emailOtpExpires = helper.expiresAt(OTP.EXPIRES_IN);
-        existingUser.expireAt = helper.expiresAt(UNVERIFIED_USER_EXPIRES_IN);
+        existingUser.emailOtpExpires = expiresAt(OTP.EXPIRES_IN);
+        existingUser.expireAt = expiresAt(UNVERIFIED_USER_EXPIRES_IN);
 
         user = await existingUser.save({ validateBeforeSave: true });
     }
@@ -95,7 +100,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
             passwordConfirm: req.body.passwordConfirm,
             isVerified: false,
             emailOtp: otp,
-            emailOtpExpires: helper.expiresAt(OTP.EXPIRES_IN),
+            emailOtpExpires: expiresAt(OTP.EXPIRES_IN),
         });
     }
 
@@ -139,11 +144,11 @@ exports.resendOTP = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [3] Generate OTP
-    const otp = helper.getRandomAlphabets(OTP.LENGTH);
+    const otp = getRandomAlphabets(OTP.LENGTH);
 
     // [4] Update User
     existingUser.emailOtp = otp;
-    existingUser.emailOtpExpires = helper.expiresAt(OTP.EXPIRES_IN);
+    existingUser.emailOtpExpires = expiresAt(OTP.EXPIRES_IN);
     await existingUser.save({ validateBeforeSave: false });
 
     // [5] Send OTP email
@@ -279,7 +284,7 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
 
     // [4] Update User
     user.passwordResetToken = await bcrypt.hash(resetToken, 12);
-    user.passwordResetTokenExpires = new Date(Date.now() + helper.toMs("10m"));
+    user.passwordResetTokenExpires = expiresAt(PASSWORD_RESET_TOKEN_EXPIRES_IN);
     await user.save({ validateBeforeSave: false });
 
     // [5] Send Token to User-Email

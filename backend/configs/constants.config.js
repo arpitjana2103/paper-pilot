@@ -2,6 +2,7 @@ const { toMs } = require("./../utils/helper.util");
 
 module.exports = {
     UNVERIFIED_USER_EXPIRES_IN: "30m",
+    PASSWORD_RESET_TOKEN_EXPIRES_IN: "10m",
 
     OTP: {
         EXPIRES_IN: "5m",

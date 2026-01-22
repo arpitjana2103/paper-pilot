@@ -2,7 +2,11 @@ const { default: mongoose } = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 
-const helper = require("./../utils/helper.util");
+const {
+    expiresAt,
+    getRandomNum,
+    getRandomAlphabets,
+} = require("./../utils/helper.util");
 const { UNVERIFIED_USER_EXPIRES_IN } = require("../configs/constants.config");
 
 const validatePassword = function (password) {
@@ -80,7 +84,7 @@ userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 2 });
 userSchema.pre("save", function () {
     // Set expireAt for new unverified users
     if (this.isNew && !this.isVerified) {
-        this.expireAt = helper.expiresAt(UNVERIFIED_USER_EXPIRES_IN);
+        this.expireAt = expiresAt(UNVERIFIED_USER_EXPIRES_IN);
     }
 
     // Remove expireAt when user gets verified
@@ -121,8 +125,8 @@ userSchema.methods.verifyToken = async function (rawToken, hashedToken) {
 };
 
 userSchema.methods.createPasswordResetToken = function () {
-    const fourDigitNum = helper.getRandomNum(1000, 9999);
-    const fourAlphaStr = helper.getRandomAlphabets(4);
+    const fourDigitNum = getRandomNum(1000, 9999);
+    const fourAlphaStr = getRandomAlphabets(4);
     const token = `${fourDigitNum}-${fourAlphaStr}`;
     return token;
 };
