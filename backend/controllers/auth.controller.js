@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const helper = require("./../utils/helper.util");
 const { catchAsyncErrors, AppError } = require("./error.controller");
 const User = require("./../models/user.model");
+const { JWT, EMAIL_OTP, HTTP } = require("./../configs/constants.config");
+
 const {
     sendEmail,
     createOtpMessage,
@@ -12,9 +14,9 @@ const {
 } = require("./../utils/email.util");
 
 const signToken = function (payload) {
-    const jwtSecreatKey = process.env.JWT_SECRET;
+    const jwtSecreatKey = JWT.SECRET;
     const jwtExpiresIn = {
-        expiresIn: process.env.JWT_EXPIRES_IN,
+        expiresIn: JWT.EXPIRES_IN,
     };
     const token = jwt.sign(payload, jwtSecreatKey, jwtExpiresIn);
     return token;
@@ -22,10 +24,9 @@ const signToken = function (payload) {
 
 const signAndSendToken = function (user, statusCode, res) {
     const token = signToken({ _id: user._id });
-    const cookieExpiresIn = helper.toMs(process.env.JWT_COOKIE_EXPIRES_IN);
 
     const cookieOptions = {
-        expires: new Date(Date.now() + cookieExpiresIn),
+        expires: JWT.COOKIE_EXPIRES_IN,
         secure: false,
         httpOnly: true,
     };
@@ -57,7 +58,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
 
     // verified existing user
     if (existingUser && existingUser.isVerified) {
-        return res.status(400).json({
+        return res.status(HTTP.BAD_REQUEST).json({
             status: "fail",
             message: "User with this email already exists",
         });
@@ -69,8 +70,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [2] Generate 6-digit OTP
-    const otp = helper.getRandomAlphabets(6);
-    const otpExpires = Date.now() + helper.toMs("30m"); // 30 minutes
+    const otp = helper.getRandomAlphabets(EMAIL_OTP.LENGTH);
 
     // [3] Create User
     const user = await User.create({
@@ -80,7 +80,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
         passwordConfirm: req.body.passwordConfirm,
         isVerified: false,
         emailOtp: otp,
-        emailOtpExpires: otpExpires,
+        emailOtpExpires: EMAIL_OTP.EXPIRES_IN,
     });
 
     // [4] Send OTP email
@@ -90,7 +90,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
         message: createOtpMessage(user.name, otp),
     });
 
-    return res.status(201).json({
+    return res.status(HTTP.CREATED).json({
         status: "success",
         message:
             "User created. OTP sent to email. Please verify to complete registration.",
@@ -99,7 +99,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
-    @desc    Verify Email OTP
+    @desc    Verify Email
     @route   POST /api/v1/auth/verify-email
     @access  Public
 */
@@ -132,14 +132,16 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
         !user.emailOtpExpires ||
         user.emailOtpExpires < Date.now()
     ) {
-        return res.status(400).json({
+        return res.status(HTTP.BAD_REQUEST).json({
             status: "fail",
             message: "OTP expired or not found. Please request a new OTP.",
         });
     }
 
     if (user.emailOtp !== otp) {
-        return res.status(400).json({ status: "fail", message: "Invalid OTP" });
+        return res
+            .status(HTTP.BAD_REQUEST)
+            .json({ status: "fail", message: "Invalid OTP" });
     }
 
     // [4] Update User
@@ -149,7 +151,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
     await user.save({ validateBeforeSave: false });
 
     // [5] Sign and send token
-    signAndSendToken(user, 200, res);
+    signAndSendToken(user, HTTP.OK, res);
 });
 
 /*
@@ -180,7 +182,7 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [5] If everything ok, send Token to client
-    signAndSendToken(user, 200, res);
+    signAndSendToken(user, HTTP.OK, res);
 });
 
 /*
@@ -222,7 +224,7 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
             message: createPassResetMessage(user, passwordResetURL),
         });
 
-        return res.status(200).json({
+        return res.status(HTTP.OK).json({
             status: "success",
             message:
                 "Password reset instructions have been sent to your registered email-address.",
@@ -280,7 +282,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     await user.save();
 
     // [3] Log the user in, send JWT
-    signAndSendToken(user, 200, res);
+    signAndSendToken(user, HTTP.OK, res);
 });
 
 /*
@@ -304,7 +306,7 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
     await user.save();
 
     // [4] Log in User and send JWT
-    signAndSendToken(user, 200, res);
+    signAndSendToken(user, HTTP.OK, res);
 });
 
 /*

@@ -1,3 +1,4 @@
+const { HTTP } = require("../configs/constants.config");
 const helper = require("./../utils/helper.util");
 
 exports.AppError = class extends Error {
@@ -31,7 +32,7 @@ exports.catchAsyncErrors = function (asyncFunc) {
 };
 
 exports.globalErrorHandeller = function (err, req, res, next) {
-    err.statusCode = err.statusCode || 500;
+    err.statusCode = err.statusCode || HTTP.SERVER_ERROR;
     err.status = err.status || "error";
 
     if (helper.runningOnDev()) {
@@ -78,7 +79,7 @@ function sendErrForProd(err, res) {
     }
 
     // Unknown Error Handelling in Production
-    return res.status(500).json({
+    return res.status(HTTP.SERVER_ERROR).json({
         env: "production",
         status: "error",
         message: "Something went very wrong !",
@@ -88,7 +89,7 @@ function sendErrForProd(err, res) {
 function handleCastErrorDB(err) {
     if (err.name === "CastError") {
         const message = `[Invalid] ${err.path}: "${err.value}" is not a valid value.`;
-        return new exports.AppError(message, 400);
+        return new exports.AppError(message, HTTP.BAD_REQUEST);
     }
     return err;
 }
@@ -96,7 +97,7 @@ function handleCastErrorDB(err) {
 function handleDuplicateFieldsDB(err) {
     if (err.code === 11000) {
         const message = `[Duplicate field value] ${JSON.stringify(err.keyValue)}`;
-        return new exports.AppError(message, 400);
+        return new exports.AppError(message, HTTP.BAD_REQUEST);
     }
     return err;
 }
@@ -104,7 +105,7 @@ function handleDuplicateFieldsDB(err) {
 function handleValidationError(err) {
     if (err.name === "ValidationError") {
         const { message } = err;
-        return new exports.AppError(message, 400);
+        return new exports.AppError(message, HTTP.BAD_REQUEST);
     }
     return err;
 }
