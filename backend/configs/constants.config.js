@@ -1,7 +1,9 @@
 const { toMs } = require("./../utils/helper.util");
 
 module.exports = {
-    EMAIL_OTP: {
+    UNVERIFIED_USER_EXPIRES_IN: "30m",
+
+    OTP: {
         EXPIRES_IN: "30m",
         LENGTH: 6,
     },

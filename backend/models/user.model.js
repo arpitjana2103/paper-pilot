@@ -3,6 +3,7 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 
 const helper = require("./../utils/helper.util");
+const { UNVERIFIED_USER_EXPIRES_IN } = require("../configs/constants.config");
 
 const validatePassword = function (password) {
     return (
@@ -64,13 +65,31 @@ const userSchema = new mongoose.Schema({
     emailOtpExpires: Date,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
+    createdAt: { type: Date, default: Date.now, immutable: true },
+    expireAt: { type: Date },
 });
+
+// Create TTL index - this tells MongoDB to auto-delete documents
+// expireAfterSeconds: 2 means delete document 2 senconds after expiredAt
+userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 2 });
 
 ////////////////////////////////////////
 // DOCUMENT MEDDLEWARE / HOOK //////////
 
 // runs before Model.prototype.save() and Model.create()
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", function () {
+    // Set expireAt for new unverified users
+    if (this.isNew && !this.isVerified) {
+        this.expireAt = helper.expiresAt(UNVERIFIED_USER_EXPIRES_IN);
+    }
+
+    // Remove expireAt when user gets verified
+    if (this.isModified("isVerified") && this.isVerified) {
+        this.expireAt = undefined;
+    }
+});
+
+userSchema.pre("save", async function () {
     // Only run the Function if the password has been changes
     // For Ex. ( if user is changing the email, no need to hash the password in that case)
     if (!this.isModified("password")) return;
