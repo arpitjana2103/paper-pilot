@@ -26,7 +26,7 @@ const signAndSendToken = function (user, statusCode, res) {
     const token = signToken({ _id: user._id });
 
     const cookieOptions = {
-        expires: JWT.COOKIE_EXPIRES_IN,
+        expires: helper.expiresAt(JWT.COOKIE_EXPIRES_IN),
         secure: false,
         httpOnly: true,
     };
@@ -80,7 +80,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
         passwordConfirm: req.body.passwordConfirm,
         isVerified: false,
         emailOtp: otp,
-        emailOtpExpires: EMAIL_OTP.EXPIRES_IN,
+        emailOtpExpires: helper.expiresAt(EMAIL_OTP.EXPIRES_IN),
     });
 
     // [4] Send OTP email

@@ -24,3 +24,7 @@ exports.runningOnProd = function () {
 exports.runningOnDev = function () {
     return process.env.NODE_ENV === "development";
 };
+
+exports.expiresAt = function (duration) {
+    new Date(Date.now() + exports.toMs(duration));
+};

@@ -2,14 +2,14 @@ const { toMs } = require("./../utils/helper.util");
 
 module.exports = {
     EMAIL_OTP: {
-        EXPIRES_IN: new Date(Date.now() + toMs("30m")), // 5 minutes in milliseconds
+        EXPIRES_IN: "30m",
         LENGTH: 6,
     },
 
     JWT: {
         SECRET: process.env.JWT_SECRET,
         EXPIRES_IN: "90d",
-        COOKIE_EXPIRES_IN: new Date(Date.now() + toMs("90d")),
+        COOKIE_EXPIRES_IN: "90d",
     },
 
     HTTP: {
