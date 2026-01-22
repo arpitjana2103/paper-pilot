@@ -4,7 +4,7 @@ module.exports = {
     UNVERIFIED_USER_EXPIRES_IN: "30m",
 
     OTP: {
-        EXPIRES_IN: "30m",
+        EXPIRES_IN: "5m",
         LENGTH: 6,
     },
 

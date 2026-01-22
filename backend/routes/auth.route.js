@@ -7,6 +7,7 @@ router.route("/login").post(authController.login);
 router.route("/verify-email").post(authController.verifyEmail);
 router.route("/forgot-password").post(authController.forgotPassword);
 router.route("/reset-password/:token").patch(authController.resetPassword);
+router.route("/resend-otp").post(authController.resendOTP);
 
 // Protected Routes
 router.use(authController.authProtect);

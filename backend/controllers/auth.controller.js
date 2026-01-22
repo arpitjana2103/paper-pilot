@@ -70,8 +70,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [3] Generate OTP
-    const otp = helper.getRandomAlphabets(6);
-    const otpExpires = Date.now() + helper.toMs("30m");
+    const otp = helper.getRandomAlphabets(OTP.LENGTH);
 
     let user;
 
@@ -96,7 +95,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
             passwordConfirm: req.body.passwordConfirm,
             isVerified: false,
             emailOtp: otp,
-            emailOtpExpires: otpExpires,
+            emailOtpExpires: helper.expiresAt(OTP.EXPIRES_IN),
         });
     }
 
@@ -107,10 +106,57 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
         message: createOtpMessage(user.name, otp),
     });
 
-    return res.status(existingUser ? 200 : 201).json({
+    return res.status(existingUser ? HTTP.OK : HTTP.CREATED).json({
         status: "success",
         message: "OTP sent to email. Please verify to complete registration.",
         data: { email: user.email },
+    });
+});
+
+/*
+    @desc    resendOTP
+    @route   POST /api/v1/auth/resend-otp
+    @access  Public
+*/
+
+exports.resendOTP = catchAsyncErrors(async function (req, res, next) {
+    // [1] Check if user exists
+    const existingUser = await User.findOne({ email: req.body.email });
+
+    if (!existingUser) {
+        return res.status(HTTP.BAD_REQUEST).json({
+            status: "fail",
+            message: "No user found with this email",
+        });
+    }
+
+    // [2] Verified user already exists
+    if (existingUser && existingUser.isVerified) {
+        return res.status(HTTP.BAD_REQUEST).json({
+            status: "fail",
+            message: "User with this email already virified",
+        });
+    }
+
+    // [3] Generate OTP
+    const otp = helper.getRandomAlphabets(OTP.LENGTH);
+
+    // [4] Update User
+    existingUser.emailOtp = otp;
+    existingUser.emailOtpExpires = helper.expiresAt(OTP.EXPIRES_IN);
+    await existingUser.save({ validateBeforeSave: false });
+
+    // [5] Send OTP email
+    await sendEmail({
+        to: existingUser.email,
+        subject: "Verify your Paper Pilot account",
+        message: createOtpMessage(existingUser.name, otp),
+    });
+
+    return res.status(HTTP.OK).json({
+        status: "success",
+        message: "OTP sent to email. Please verify to complete registration.",
+        data: { email: existingUser.email },
     });
 });
 

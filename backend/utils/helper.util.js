@@ -26,5 +26,5 @@ exports.runningOnDev = function () {
 };
 
 exports.expiresAt = function (duration) {
-    new Date(Date.now() + exports.toMs(duration));
+    return new Date(Date.now() + exports.toMs(duration));
 };
