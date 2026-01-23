@@ -205,7 +205,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
         });
     }
 
-    if (user.emailOtp !== otp) {
+    if (!user.varifyEmailOtp(otp, user.emailOtp)) {
         return res
             .status(HTTP.BAD_REQUEST)
             .json({ status: "fail", message: "Invalid OTP" });
@@ -280,10 +280,10 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [3] Generate Random Reset Token
-    const resetToken = await user.createPasswordResetToken();
+    const resetToken = user.createPasswordResetToken();
 
     // [4] Update User
-    user.passwordResetToken = await bcrypt.hash(resetToken, 12);
+    user.passwordResetToken = resetToken;
     user.passwordResetTokenExpires = expiresAt(PASSWORD_RESET_TOKEN_EXPIRES_IN);
     await user.save({ validateBeforeSave: false });
 
@@ -332,7 +332,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     // [3] Check if Token Invalid
     const rawToken = req.params.token;
     const hashedToken = user.passwordResetToken || "";
-    const isTokenInvalid = !(await user.verifyToken(rawToken, hashedToken));
+    const isTokenInvalid = !(await user.verifyPasswordResetToken(rawToken, hashedToken));
     if (isTokenInvalid) {
         return next(
             new AppError("Invalid Password-Reset-Link !", HTTP.BAD_REQUEST),
@@ -411,8 +411,7 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [2] Verify token
-    const jwtSecretKey = process.env.JWT_SECRET;
-    const decoded = await promisify(jwt.verify)(token, jwtSecretKey);
+    const decoded = await promisify(jwt.verify)(token, JWT.SECRET);
 
     // [3] Check if user still exists
     /* Ex. What if user has been deleated in the mean-time and someone-else is

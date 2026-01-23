@@ -103,6 +103,20 @@ userSchema.pre("save", async function () {
     this.passwordConfirm = undefined;
 });
 
+userSchema.pre("save", async function () {
+    if (!this.isModified("emailOtp") || !this.emailOtp) return;
+
+    // Hash OTP
+    this.emailOtp = await bcrypt.hash(this.emailOtp, 12);
+})
+
+userSchema.pre("save", async function () {
+    if (!this.isModified("passwordResetToken") || !this.passwordResetToken) return;
+
+    // Hash passwordResetToken
+    this.passwordResetToken = await bcrypt.hash(this.passwordResetToken, 12);
+})
+
 // runs after Model.prototype.save() and Model.create()
 userSchema.post("save", function (doc, next) {
     doc.password = undefined;
@@ -116,13 +130,13 @@ userSchema.post("save", function (doc, next) {
 // Instance Method /////////////////////
 // These Methods will be availabe for all the Documents
 
-userSchema.methods.verifyPassword = async function (rawPass, hashedPass) {
-    return await bcrypt.compare(rawPass, hashedPass);
-};
+const bcryptVerification = async function (rawVal, hashedVal) {
+    return await bcrypt.compare(rawVal, hashedVal);
+}
 
-userSchema.methods.verifyToken = async function (rawToken, hashedToken) {
-    return await bcrypt.compare(rawToken, hashedToken);
-};
+userSchema.methods.verifyPassword = bcryptVerification
+userSchema.methods.varifyEmailOtp = bcryptVerification
+userSchema.methods.verifyPasswordResetToken = bcryptVerification
 
 userSchema.methods.createPasswordResetToken = function () {
     const fourDigitNum = getRandomNum(1000, 9999);
