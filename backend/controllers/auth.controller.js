@@ -205,7 +205,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
         });
     }
 
-    if (!user.varifyEmailOtp(otp, user.emailOtp)) {
+    if (!user.verifyEmailOtp(otp, user.emailOtp)) {
         return res
             .status(HTTP.BAD_REQUEST)
             .json({ status: "fail", message: "Invalid OTP" });
