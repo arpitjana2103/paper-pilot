@@ -332,7 +332,10 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     // [3] Check if Token Invalid
     const rawToken = req.params.token;
     const hashedToken = user.passwordResetToken || "";
-    const isTokenInvalid = !(await user.verifyPasswordResetToken(rawToken, hashedToken));
+    const isTokenInvalid = !(await user.verifyPasswordResetToken(
+        rawToken,
+        hashedToken,
+    ));
     if (isTokenInvalid) {
         return next(
             new AppError("Invalid Password-Reset-Link !", HTTP.BAD_REQUEST),
