@@ -1,4 +1,4 @@
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose")
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 
@@ -23,7 +23,7 @@ const validatePassword = function (password) {
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        requred: [true, "ERR: name field can't be blank"],
+        required: [true, "ERR: name field can't be blank"],
     },
     email: {
         type: String,
@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema({
                 return this.password === passwordConfirm;
             },
             message:
-                "ERR: password & passwordConfirm filed value should be same",
+                "ERR: password & passwordConfirm field value should be same",
         },
     },
     isVerified: {
@@ -69,16 +69,18 @@ const userSchema = new mongoose.Schema({
     emailOtpExpires: Date,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
-    createdAt: { type: Date, default: Date.now, immutable: true },
+    passwordChangedAt: Date,
     expireAt: { type: Date },
+}, {
+    timestamps: true,
 });
 
 // Create TTL index - this tells MongoDB to auto-delete documents
-// expireAfterSeconds: 2 means delete document 2 senconds after expiredAt
+// expireAfterSeconds: 2 means delete document 2 seconds after expiredAt
 userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 2 });
 
 ////////////////////////////////////////
-// DOCUMENT MEDDLEWARE / HOOK //////////
+// DOCUMENT MIDDLEWARE / HOOK //////////
 
 // runs before Model.prototype.save() and Model.create()
 userSchema.pre("save", function () {
@@ -94,13 +96,18 @@ userSchema.pre("save", function () {
 });
 
 userSchema.pre("save", async function () {
-    // Only run the Function if the password has been changes
+    // Only run the Function if the password has been changed
     // For Ex. ( if user is changing the email, no need to hash the password in that case)
     if (!this.isModified("password")) return;
 
     // Hash password
     this.password = await bcrypt.hash(this.password, 12);
     this.passwordConfirm = undefined;
+
+    // Set passwordChangedAt timestamp (skip if document is new)
+    if (!this.isNew) {
+        this.passwordChangedAt = new Date();
+    }
 });
 
 userSchema.pre("save", async function () {
@@ -108,14 +115,14 @@ userSchema.pre("save", async function () {
 
     // Hash OTP
     this.emailOtp = await bcrypt.hash(this.emailOtp, 12);
-})
+});
 
 userSchema.pre("save", async function () {
     if (!this.isModified("passwordResetToken") || !this.passwordResetToken) return;
 
     // Hash passwordResetToken
     this.passwordResetToken = await bcrypt.hash(this.passwordResetToken, 12);
-})
+});
 
 // runs after Model.prototype.save() and Model.create()
 userSchema.post("save", function (doc, next) {
@@ -128,15 +135,15 @@ userSchema.post("save", function (doc, next) {
 
 ////////////////////////////////////////
 // Instance Method /////////////////////
-// These Methods will be availabe for all the Documents
+// These Methods will be available for all the Documents
 
 const bcryptVerification = async function (rawVal, hashedVal) {
     return await bcrypt.compare(rawVal, hashedVal);
-}
+};
 
-userSchema.methods.verifyPassword = bcryptVerification
-userSchema.methods.varifyEmailOtp = bcryptVerification
-userSchema.methods.verifyPasswordResetToken = bcryptVerification
+userSchema.methods.verifyPassword = bcryptVerification;
+userSchema.methods.verifyEmailOtp = bcryptVerification;
+userSchema.methods.verifyPasswordResetToken = bcryptVerification;
 
 userSchema.methods.createPasswordResetToken = function () {
     const fourDigitNum = getRandomNum(1000, 9999);
