@@ -393,6 +393,28 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
+    @desc    Update Profile
+    @route   PATCH /api/v1/auth/update-profile
+    @access  Privet
+*/
+
+exports.updateProfile = catchAsyncErrors(async function (req, res, next) {
+    // [1] Get user from collection
+    const user = await User.findById(req.user.id);
+
+    // [2] Update the Profile
+    user.name = req.body.name || user.name;
+    user.photo = req.body.photo || user.photo;
+    await user.save();
+
+    // [3] Send Response
+    return res.status(HTTP.OK).json({
+        status: "success",
+        message: "Profile updated successfully.",
+    });
+});
+
+/*
     [MIDDLEWARE]
     @desc    Auth Protect Middleware
     @access  Privet
