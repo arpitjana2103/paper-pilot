@@ -70,6 +70,8 @@ function sendErrForProd(err, res) {
     // Exmple : Fail schema validation
     err = handleValidationError(err);
 
+    err = handleMulterError(err);
+
     if (err.isOperational) {
         return res.status(err.statusCode).json({
             env: "production",
@@ -105,6 +107,15 @@ function handleDuplicateFieldsDB(err) {
 function handleValidationError(err) {
     if (err.name === "ValidationError") {
         const { message } = err;
+        return new exports.AppError(message, HTTP.BAD_REQUEST);
+    }
+    return err;
+}
+
+function handleMulterError(err) {
+    if (err.name === "MulterError") {
+        console.log("its multer error");
+        const message = `field: ${err.field}, ${err.message}`;
         return new exports.AppError(message, HTTP.BAD_REQUEST);
     }
     return err;

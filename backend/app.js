@@ -21,7 +21,7 @@ app.set("query parser", function (str) {
 // ‍[ note : Parses incoming JSON requests into JavaScript objects ]
 app.use(express.json());
 
-// [ note : Parse URL-encoded form data into req.body ]
+// [ note : Parse URL-encoded form data (not-file) into req.body ]
 app.use(express.urlencoded({ extended: true }));
 
 // CORS Middleware
