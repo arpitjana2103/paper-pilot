@@ -404,8 +404,8 @@ exports.updateProfile = catchAsyncErrors(async function (req, res, next) {
 
     // [2] Update the Profile
     user.name = req.body.name || user.name;
-    user.photo = req.body.photo || user.photo;
-    await user.save();
+    user.photo = req.file?.filename || user.filename;
+    await user.save({ validateBeforeSave: false });
 
     // [3] Send Response
     return res.status(HTTP.OK).json({

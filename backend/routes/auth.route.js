@@ -1,6 +1,8 @@
 const express = require("express");
 const authController = require("../controllers/auth.controller");
 const router = express.Router();
+const { uploadProfile } = require("../configs/multer.config");
+const { PROFILE_PHOTO_FIELDNAME } = require("../configs/constants.config");
 
 router.route("/signup").post(authController.signup);
 router.route("/login").post(authController.login);
@@ -13,6 +15,11 @@ router.route("/resend-otp").post(authController.resendOTP);
 router.use(authController.authProtect);
 
 router.route("/update-password").patch(authController.updatePassword);
-router.route("/update-profile").patch(authController.updateProfile);
+router
+    .route("/update-profile")
+    .patch(
+        uploadProfile.single(PROFILE_PHOTO_FIELDNAME),
+        authController.updateProfile,
+    );
 
 module.exports = router;
