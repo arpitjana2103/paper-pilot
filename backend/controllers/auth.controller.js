@@ -244,8 +244,7 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
 
     // [3] Check if User is verified
     if (user && !user.isVerified) {
-        await user.deleteOne();
-        return next(new AppError("No user found !", HTTP.NOT_FOUND));
+        return next(new AppError("User not verified!", HTTP.BAD_REQUEST));
     }
 
     // [4] Check if User exist and password is correct
@@ -270,13 +269,12 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-        return next(new AppError("No user found !", HTTP.NOT_FOUND));
+        return next(new AppError("No user found!", HTTP.NOT_FOUND));
     }
 
     // [2] Check if User is verified
     if (user && !user.isVerified) {
-        await user.deleteOne();
-        return next(new AppError("No user found !", HTTP.NOT_FOUND));
+        return next(new AppError("User not verified!", HTTP.BAD_REQUEST));
     }
 
     // [3] Generate Random Reset Token
@@ -338,7 +336,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     ));
     if (isTokenInvalid) {
         return next(
-            new AppError("Invalid Password-Reset-Link !", HTTP.BAD_REQUEST),
+            new AppError("Invalid Password-Reset-Link!", HTTP.BAD_REQUEST),
         );
     }
 
@@ -351,7 +349,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     const resetTokenExpiredAt = user.passwordResetTokenExpires.getTime();
     if (Date.now() > resetTokenExpiredAt) {
         return next(
-            new AppError("Password-Reset-Link expired !", HTTP.BAD_REQUEST),
+            new AppError("Password-Reset-Link expired!", HTTP.BAD_REQUEST),
         );
     }
 
@@ -446,7 +444,17 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
         return next(new AppError("The User donot exist.", HTTP.UNAUTHORIZED));
     }
 
-    // [4] bind user with reqObj
+    // [4] Check if user changed password after the token was issued
+    if (user.changedPasswordAfter(decoded.iat)) {
+        return next(
+            new AppError(
+                "Password changed! Please log in again!",
+                HTTP.UNAUTHORIZED,
+            ),
+        );
+    }
+
+    // [5] bind user with reqObj
     req.user = user;
     next();
 });
