@@ -114,7 +114,6 @@ function handleValidationError(err) {
 
 function handleMulterError(err) {
     if (err.name === "MulterError") {
-        console.log("its multer error");
         const message = `field: ${err.field}, ${err.message}`;
         return new exports.AppError(message, HTTP.BAD_REQUEST);
     }

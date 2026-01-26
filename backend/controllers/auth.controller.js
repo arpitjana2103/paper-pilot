@@ -402,8 +402,6 @@ exports.updateProfile = catchAsyncErrors(async function (req, res, next) {
     // [1] Get user from collection
     const user = await User.findById(req.user.id);
 
-    console.log(req.file);
-
     // [2] Update the Profile
     user.name = req.body.name || user.name;
     user.photo = req.file?.filename || user.filename;
