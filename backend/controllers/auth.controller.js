@@ -1,6 +1,5 @@
 const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
 
 const {
     expiresAt,
@@ -139,7 +138,7 @@ exports.resendOTP = catchAsyncErrors(async function (req, res, next) {
     if (existingUser && existingUser.isVerified) {
         return res.status(HTTP.BAD_REQUEST).json({
             status: "fail",
-            message: "User with this email already virified",
+            message: "User with this email already verified",
         });
     }
 
@@ -205,7 +204,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
         });
     }
 
-    if (!user.verifyEmailOtp(otp, user.emailOtp)) {
+    if (!(await user.verifyEmailOtp(otp, user.emailOtp))) {
         return res
             .status(HTTP.BAD_REQUEST)
             .json({ status: "fail", message: "Invalid OTP" });
@@ -399,6 +398,8 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
 exports.updateProfile = catchAsyncErrors(async function (req, res, next) {
     // [1] Get user from collection
     const user = await User.findById(req.user.id);
+
+    console.log(req.file);
 
     // [2] Update the Profile
     user.name = req.body.name || user.name;
