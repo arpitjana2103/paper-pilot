@@ -14,6 +14,7 @@ const {
     HTTP,
     UNVERIFIED_USER_EXPIRES_IN,
     PASSWORD_RESET_TOKEN_EXPIRES_IN,
+    UPLOAD_BASE_URL,
 } = require("./../configs/constants.config");
 
 const {
@@ -31,7 +32,7 @@ const signToken = function (payload) {
     return token;
 };
 
-const signAndSendToken = function (user, statusCode, res) {
+const signAndSendToken = function (user, statusCode, req, res) {
     const token = signToken({ _id: user._id });
 
     const cookieOptions = {
@@ -50,6 +51,8 @@ const signAndSendToken = function (user, statusCode, res) {
                 _id: user.id,
                 name: user.name,
                 email: user.email,
+                photo:
+                    user.photo && `${UPLOAD_BASE_URL}/profiles/${user.photo}`,
             },
         },
     });
@@ -217,7 +220,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
     await user.save({ validateBeforeSave: false });
 
     // [5] Sign and send token
-    signAndSendToken(user, HTTP.OK, res);
+    signAndSendToken(user, HTTP.OK, req, res);
 });
 
 /*
@@ -254,7 +257,7 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [5] If everything ok, send Token to client
-    signAndSendToken(user, HTTP.OK, res);
+    signAndSendToken(user, HTTP.OK, req, res);
 });
 
 /*
@@ -360,7 +363,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     await user.save();
 
     // [3] Log the user in, send JWT
-    signAndSendToken(user, HTTP.OK, res);
+    signAndSendToken(user, HTTP.OK, req, res);
 });
 
 /*
@@ -386,7 +389,7 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
     await user.save();
 
     // [4] Log in User and send JWT
-    signAndSendToken(user, HTTP.OK, res);
+    signAndSendToken(user, HTTP.OK, req, res);
 });
 
 /*
@@ -410,6 +413,13 @@ exports.updateProfile = catchAsyncErrors(async function (req, res, next) {
     return res.status(HTTP.OK).json({
         status: "success",
         message: "Profile updated successfully.",
+        data: {
+            user: {
+                name: user.name,
+                photo:
+                    user.photo && `${UPLOAD_BASE_URL}/profiles/${user.photo}`,
+            },
+        },
     });
 });
 
