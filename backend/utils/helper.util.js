@@ -63,3 +63,17 @@ exports.runningOnDev = function () {
 exports.expiresAt = function (duration) {
     return new Date(Date.now() + exports.toMs(duration));
 };
+
+/*
+   @desc    Sanitizes a filename by replacing special characters with underscores, collapsing  
+            multiple dots to one, and converting to lowercase
+   @param   {string} filename
+   @returns {string}
+*/
+
+exports.sanitizeFilename = function (filename) {
+    return filename
+        .replace(/[^a-zA-Z0-9.-]/g, "_") // Replace special chars
+        .replace(/\.+/g, ".") // Multiple dots to single
+        .toLowerCase();
+};

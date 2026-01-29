@@ -10,6 +10,7 @@ const {
     DOCUMENT_PDF_FIELDNAME,
     HTTP,
 } = require("./constants.config");
+const { sanitizeFilename } = require("../utils/helper.util");
 
 const genPath = function (dir) {
     if (!fs.existsSync(dir)) {
@@ -34,7 +35,7 @@ const documentFilter = (req, file, cb) => {
     if (file.mimetype !== "application/pdf") {
         return cb(
             new AppError(
-                `field: ${DOCUMENT_PDF_FIELDNAME}, Only PDF files are allowed`,
+                `field: ${DOCUMENT_PDF_FIELDNAME}, Expected: application/pdf. Received: ${file.mimetype}`,
                 HTTP.BAD_REQUEST,
             ),
             false,
@@ -50,17 +51,20 @@ const profileStorage = multer.diskStorage({
         return cb(null, PROFILE_PHOTO_UPLOAD_PATH);
     },
     filename: function (req, file, cb) {
-        cb(null, `${req.user._id}-${file.originalname}`);
+        const fileName = sanitizeFilename(file.originalname);
+        cb(null, `${req.user._id}-${fileName}`);
     },
 });
 
 const documentStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        genPath(DOCUMENT_PDF_UPLOAD_PATH);
-        return cb(null, DOCUMENT_PDF_UPLOAD_PATH);
+        const pdfUploadPath = `${DOCUMENT_PDF_UPLOAD_PATH}/${req.user._id}`;
+        genPath(pdfUploadPath);
+        return cb(null, pdfUploadPath);
     },
     filename: function (req, file, cb) {
-        cb(null, `${req.user._id}-${Date.now()}-${file.originalname}`);
+        const fileName = sanitizeFilename(file.originalname);
+        cb(null, `${req.user._id}-${Date.now()}-${fileName}`);
     },
 });
 
