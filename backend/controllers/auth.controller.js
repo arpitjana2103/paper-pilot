@@ -17,11 +17,12 @@ const {
     UPLOAD_BASE_URL,
 } = require("./../configs/constants.config");
 
+const { sendEmail } = require("./../services/email.service");
+
 const {
-    sendEmail,
     createOtpMessage,
     createPassResetMessage,
-} = require("./../utils/email.util");
+} = require("./../utils/email-templates.util");
 
 const signToken = function (payload) {
     const jwtSecreatKey = JWT.SECRET;

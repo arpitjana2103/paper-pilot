@@ -1,22 +1,23 @@
 const ms = require("ms");
 
-/**
- * Generates a random integer between min and max (inclusive)
- * @param {number} min - The minimum value
- * @param {number} max - The maximum value
- * @returns {number} A random integer between min and max
- */
+/*
+   @desc    Generates a random integer between min and max (inclusive)
+   @param   {number} min
+   @param   {number} max
+   @returns {number}
+*/
 
 exports.getRandomNum = function (min, max) {
     const randomVal = Math.random();
     return Math.floor(randomVal * (max - min + 1)) + min;
 };
 
-/**
- * Generates a random string of uppercase alphabets of a specified length
- * @param {number} length - The length of the string to generate
- * @returns {string} A random string of uppercase alphabets
- */
+/*
+   @desc    Generates a random string of uppercase alphabets of a specified length
+   @param   {number} length
+   @returns {string}
+*/
+
 exports.getRandomAlphabets = function (length) {
     const randomArr = [];
     for (let i = 0; i < length; i++) {
@@ -25,36 +26,40 @@ exports.getRandomAlphabets = function (length) {
     return String.fromCharCode(...randomArr);
 };
 
-/**
- * Converts a duration string to milliseconds
- * @param {string} durationStr - The duration string (e.g., '1h', '2d')
- * @returns {number} The duration in milliseconds
- */
+/*
+   @desc    Converts a duration string to milliseconds
+   @param   {string} durationStr
+   @returns {number}
+*/
+
 exports.toMs = function (durationStr) {
     return ms(durationStr);
 };
 
-/**
- * Checks if the application is running in the production environment
- * @returns {boolean} True if running in production, false otherwise
- */
+/*
+   @desc    Checks if the application is running in the production environment
+   @returns {boolean}
+*/
+
 exports.runningOnProd = function () {
     return process.env.NODE_ENV === "production";
 };
 
-/**
- * Checks if the application is running in the development environment
- * @returns {boolean} True if running in development, false otherwise
- */
+/*
+   @desc    Checks if the application is running in the development environment
+   @returns {boolean}
+*/
+
 exports.runningOnDev = function () {
     return process.env.NODE_ENV === "development";
 };
 
-/**
- * Calculates the expiration date based on the current time and a duration
- * @param {string} duration - The duration string (e.g., '1h', '2d')
- * @returns {Date} The expiration date
- */
+/*
+   @desc    Calculates the expiration date based on the current time and a duration
+   @param   {string} duration
+   @returns {Date}
+*/
+
 exports.expiresAt = function (duration) {
     return new Date(Date.now() + exports.toMs(duration));
 };
