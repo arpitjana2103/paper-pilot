@@ -11,19 +11,6 @@ const authRoutes = require("./routes/auth.route");
 
 const app = express();
 
-// req.query parser Middleware
-// Set a custom query parser using qs
-app.set("query parser", function (str) {
-    return qs.parse(str);
-});
-
-// req.body parser Middleware :
-// ‍[ note : Parses incoming JSON requests into JavaScript objects ]
-app.use(express.json());
-
-// [ note : Parse URL-encoded form data (not-file) into req.body ]
-app.use(express.urlencoded({ extended: true }));
-
 // CORS Middleware
 app.use(
     cors({
@@ -34,14 +21,47 @@ app.use(
     }),
 );
 
-// Cookie Parser Middleware
+// req.cookies parser Middleware
+// [ note : Parses cookies from incoming requests into req.cookies ]
 app.use(cookieParser());
+
+// req.body parser Middleware
+// ‍[ note: Handles and parses incoming "application/json" into req.body ]
+app.use(express.json({ limit: "10mb" }));
+
+// req.body parser Middleware
+// ‍[ note: Handles and parses incoming "application/x-www-form-urlencoded" into req.body ]
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// req.query parser Middleware
+// [ note : parse URL query strings into nested js-objects ]
+app.set("query parser", function (str) {
+    return qs.parse(str);
+});
 
 // [ note : Serve static files from /uploads folder
 app.use("/uploads", express.static("uploads"));
 
+// Logger Middleware
+// [ note : Logs incoming requests with method, url, and content-type
+app.use((req, res, next) => {
+    console.log({
+        level: "info",
+        timestamp: new Date().toISOString(),
+        method: req.method,
+        url: req.url,
+        contentType: req.headers["content-type"],
+        ip: req.ip,
+    });
+    next();
+});
+
 app.get("/", (req, res) => {
-    res.send("Server is breathing");
+    res.status(200).json({
+        status: "success",
+        message: "Server is breathing",
+        timestamp: new Date().toISOString(),
+    });
 });
 
 // Routes Middleware
@@ -56,6 +76,3 @@ app.use((req, res, next) => {
 app.use(globalErrorHandeller);
 
 module.exports = app;
-
-// modules required :
-// bcrypt, cors, dotenv, express, express-validator jsonwebtoken mongoose multer pdf-parse @google/genai

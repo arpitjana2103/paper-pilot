@@ -68,6 +68,9 @@ const documentStorage = multer.diskStorage({
     },
 });
 
+// req.body & req.file parser Middleware
+// [ note: Handles and parses incoming "multipart/form-data" into req.file & req.body ]
+
 const uploadProfile = multer({
     fileFilter: profileFilter,
     storage: profileStorage,
