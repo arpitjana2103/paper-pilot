@@ -20,6 +20,9 @@ module.exports = {
     // Document Processing Constants
     DOCUMENT_PROCESS_MAX_RETRIES: 3,
 
+    // Chunk Constants
+    CHUNK_EMBEDDING_DIMENSION: 768,
+
     OTP: {
         EXPIRES_IN: "5m",
         LENGTH: 6,

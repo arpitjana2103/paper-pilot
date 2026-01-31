@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { CHUNK_EMBEDDING_DIMENSION } = require("../configs/constants.config");
 
 const chunkSchema = new mongoose.Schema(
     {
@@ -21,9 +22,12 @@ const chunkSchema = new mongoose.Schema(
             required: [true, "ERR: embedding filed can't be blank"],
             validate: {
                 validator: function (v) {
-                    return Array.isArray(v) && v.length === 768;
+                    return (
+                        Array.isArray(v) &&
+                        v.length === CHUNK_EMBEDDING_DIMENSION
+                    );
                 },
-                message: "ERR: Embedding must be an array of 768 numbers",
+                message: `ERR: Embedding must be an array of ${CHUNK_EMBEDDING_DIMENSION} numbers`,
             },
         },
         metadata: {
