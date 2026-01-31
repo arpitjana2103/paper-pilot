@@ -20,60 +20,63 @@ const validatePassword = function (password) {
     );
 };
 
-const userSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, "ERR: name field can't be blank"],
-    },
-    email: {
-        type: String,
-        required: [true, "ERR: email field can't be blank"],
-        unique: true,
-        lowercase: true,
-        validate: {
-            validator: validator.isEmail,
-            message: "ERR: invalid email id",
+const userSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: [true, "ERR: name field can't be blank"],
         },
-    },
-    photo: String,
-    password: {
-        type: String,
-        required: [true, "ERR: password field can't be blank"],
-        select: false,
-        validate: {
-            validator: validatePassword,
-            message:
-                "ERR: password must be 5 chars minimum and includes uppercase, lowercase, number and special-char",
+        email: {
+            type: String,
+            required: [true, "ERR: email field can't be blank"],
+            unique: true,
+            lowercase: true,
+            validate: {
+                validator: validator.isEmail,
+                message: "ERR: invalid email id",
+            },
         },
-    },
-    passwordConfirm: {
-        type: String,
-        required: [true, "ERR: confirm-password field can't be blank"],
-        validate: {
-            /* [ Note : 
+        photo: String,
+        password: {
+            type: String,
+            required: [true, "ERR: password field can't be blank"],
+            select: false,
+            validate: {
+                validator: validatePassword,
+                message:
+                    "ERR: password must be 5 chars minimum and includes uppercase, lowercase, number and special-char",
+            },
+        },
+        passwordConfirm: {
+            type: String,
+            required: [true, "ERR: confirm-password field can't be blank"],
+            validate: {
+                /* [ Note : 
                 Validator runs only on document creation (save/create), not for updates.
                 'this' refers to the current doc for NEW docs only.
             */
-            validator: function (passwordConfirm) {
-                return this.password === passwordConfirm;
+                validator: function (passwordConfirm) {
+                    return this.password === passwordConfirm;
+                },
+                message:
+                    "ERR: password & passwordConfirm field value should be same",
             },
-            message:
-                "ERR: password & passwordConfirm field value should be same",
         },
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
+        emailOtp: String,
+        emailOtpExpires: Date,
+        passwordResetToken: String,
+        passwordResetTokenExpires: Date,
+        passwordChangedAt: Date,
+        expireAt: { type: Date },
     },
-    isVerified: {
-        type: Boolean,
-        default: false,
+    {
+        timestamps: true,
     },
-    emailOtp: String,
-    emailOtpExpires: Date,
-    passwordResetToken: String,
-    passwordResetTokenExpires: Date,
-    passwordChangedAt: Date,
-    expireAt: { type: Date },
-}, {
-    timestamps: true,
-});
+);
 
 // Create TTL index - this tells MongoDB to auto-delete documents
 // expireAfterSeconds: 2 means delete document 2 seconds after expiredAt
@@ -118,7 +121,8 @@ userSchema.pre("save", async function () {
 });
 
 userSchema.pre("save", async function () {
-    if (!this.isModified("passwordResetToken") || !this.passwordResetToken) return;
+    if (!this.isModified("passwordResetToken") || !this.passwordResetToken)
+        return;
 
     // Hash passwordResetToken
     this.passwordResetToken = await bcrypt.hash(this.passwordResetToken, 12);
@@ -137,6 +141,13 @@ userSchema.post("save", function (doc, next) {
 // Instance Method /////////////////////
 // These Methods will be available for all the Documents
 
+/*
+    @description Verify bcrypt hash
+    @param       {String} rawVal - The raw password value
+    @param       {String} hashedVal - The hashed password value
+    @returns     {Promise<Boolean>} - A promise that resolves to true if password is valid, false otherwise
+*/
+
 const bcryptVerification = async function (rawVal, hashedVal) {
     return await bcrypt.compare(rawVal, hashedVal);
 };
@@ -145,12 +156,23 @@ userSchema.methods.verifyPassword = bcryptVerification;
 userSchema.methods.verifyEmailOtp = bcryptVerification;
 userSchema.methods.verifyPasswordResetToken = bcryptVerification;
 
+/*
+    @description Create a password reset token
+    @returns     {String} - The password reset token
+*/
+
 userSchema.methods.createPasswordResetToken = function () {
     const fourDigitNum = getRandomNum(1000, 9999);
     const fourAlphaStr = getRandomAlphabets(4);
     const token = `${fourDigitNum}-${fourAlphaStr}`;
     return token;
 };
+
+/*
+    @description Check if password was changed after token was issued
+    @param       {Number} JWTTimestamp - The timestamp of the JWT token
+    @returns     {Boolean} - True if password was changed after token was issued, false otherwise
+*/
 
 userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
     if (this.passwordChangedAt) {
