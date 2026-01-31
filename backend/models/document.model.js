@@ -40,7 +40,7 @@ const documentSchema = new mongoose.Schema(
             value: {
                 type: Number,
                 required: [true, "ERR: fileSize.value filed can't be blank"],
-                min: 0,
+                min: [0, "ERR: fileSize.value must be a non-negative number"],
             },
             unit: {
                 type: String,
@@ -81,7 +81,7 @@ const documentSchema = new mongoose.Schema(
         retryCount: {
             type: Number,
             default: 0,
-            min: 0,
+            min: [0, "ERR: retryCount must be a non-negative number"],
         },
         maxRetries: {
             type: Number,
