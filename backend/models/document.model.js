@@ -1,69 +1,118 @@
 const mongoose = require("mongoose");
+const { DOCUMENT_PROCESS_MAX_RETRIES } = require("../configs/constants.config");
+
+/*
+req.file be like this:
+{
+  fieldname: 'profile-photo',
+  originalname: 'profile.jpg',
+  encoding: '7bit',
+  mimetype: 'image/jpeg',
+  destination: 'C:\\Users\\Arpit Jana\\Documents\\se-25-26\\Projects\\paper-pilot\\backend\\uploads\\profiles',
+  filename: '6978f28cb40714461bea8216-profile.jpg',
+  path: 'C:\\Users\\Arpit Jana\\Documents\\se-25-26\\Projects\\paper-pilot\\backend\\uploads\\profiles\\6978f28cb40714461bea8216-profile.jpg',    
+  size: 98569
+}
+*/
 
 const documentSchema = new mongoose.Schema(
     {
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: [true, "ERR: userId field can't be blank"],
-        },
-        title: {
-            type: String,
-            required: [true, "ERR: title field can't be blank"],
-            trim: true,
+            required: [true, "ERR: userId filed can't be blank"],
         },
         fileName: {
             type: String,
-            required: [true, "ERR: fileName field can't be blank"],
+            required: [true, "ERR: fileName filed can't be blank"],
+            trim: true,
+        },
+        originalName: {
+            type: String,
+            required: [true, "ERR: originalName filed can't be blank"],
+            trim: true,
         },
         filePath: {
             type: String,
-            required: [true, "ERR: filePath field can't be blank"],
+            required: [true, "ERR: filePath filed can't be blank"],
         },
         fileSize: {
-            type: Number,
-            required: [true, "ERR: fileSize field can't be blank"],
-        },
-        extractedText: {
-            type: String,
-        },
-        chunks: [
-            {
-                content: {
-                    type: String,
-                    required: [true, "ERR: content field can't be blank"],
-                },
-                pageNumber: {
-                    type: Number,
-                    default: 0,
-                },
-                chunkIndex: {
-                    type: Number,
-                    required: [true, "ERR: chunkIndex field can't be blank"],
-                },
+            value: {
+                type: Number,
+                required: [true, "ERR: fileSize.value filed can't be blank"],
+                min: 0,
             },
-        ],
-        uploadDate: {
-            type: Date,
-            default: Date.now,
+            unit: {
+                type: String,
+                enum: ["byte", "kilobyte", "megabyte"],
+                default: "byte",
+            },
         },
-        lastAccessed: {
-            type: Date,
-            default: Date.now,
+        mimeType: {
+            type: String,
+            required: [true, "ERR: mimeType filed can't be blank"],
+            default: "application/pdf",
         },
         status: {
             type: String,
-            enum: ["processing", "ready", "failed"],
+            enum: {
+                values: ["processing", "ready", "failed", "retrying"],
+                message:
+                    "Status must be processing, ready, failed, or retrying",
+            },
             default: "processing",
         },
+        totalPages: {
+            type: Number,
+            default: 0,
+        },
+        totalChunks: {
+            type: Number,
+            default: 0,
+        },
+        uploadedAt: {
+            type: Date,
+            default: Date.now,
+        },
+        processedAt: {
+            type: Date,
+            default: null,
+        },
+        retryCount: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        maxRetries: {
+            type: Number,
+            default: DOCUMENT_PROCESS_MAX_RETRIES,
+        },
+        lastError: {
+            type: String,
+            default: null,
+        },
+        metadata: {
+            type: Object,
+            default: {},
+        },
     },
-    {
-        timestamps: true,
-    },
+    { timestamps: true },
 );
 
-documentSchema.index({ userId: 1, uploadDate: -1 });
+////////////////////////////////////////
+// VIRTUAL FIELDS //////////////////////
+
+documentSchema.virtual("isReady").get(function () {
+    return this.status === "ready";
+});
+
+documentSchema.virtual("isFailed").get(function () {
+    return this.status === "failed";
+});
+
+documentSchema.virtual("canRetry").get(function () {
+    return this.status === "failed" && this.retryCount < this.maxRetries;
+});
 
 const Document = mongoose.model("Document", documentSchema);
-
 module.exports = Document;
