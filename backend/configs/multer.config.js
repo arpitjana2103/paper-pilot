@@ -2,7 +2,7 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 
-const { AppError } = require("../controllers/error.controller");
+const { ClientError } = require("../controllers/error.controller");
 const {
     PROFILE_PHOTO_UPLOAD_PATH,
     DOCUMENT_PDF_UPLOAD_PATH,
@@ -36,7 +36,7 @@ const profileFilter = (req, file, cb) => {
         !allowedExtensions.includes(ext)
     ) {
         return cb(
-            new AppError(
+            new ClientError(
                 `field: ${PROFILE_PHOTO_FIELDNAME}, File: "${file.originalname}" - Only JPEG/PNG images are allowed`,
                 HTTP.BAD_REQUEST,
             ),
@@ -51,7 +51,7 @@ const documentFilter = (req, file, cb) => {
 
     if (file.mimetype !== "application/pdf" || ext !== "pdf") {
         return cb(
-            new AppError(
+            new ClientError(
                 `field: ${DOCUMENT_PDF_FIELDNAME}, File: "${file.originalname}" - Expected: application/pdf (.pdf). Received: ${file.mimetype}`,
                 HTTP.BAD_REQUEST,
             ),

@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { AppError } = require("./../controllers/error.controller");
+const { ClientError } = require("./../controllers/error.controller");
 
 const gmOptions = {
     service: "gmail",
@@ -31,6 +31,6 @@ exports.sendEmail = async function (options) {
     try {
         await transporter.sendMail(mailOPtions);
     } catch (error) {
-        throw new AppError("There was an error in Sending Email", 500);
+        throw new ClientError("There was an error in Sending Email", 500);
     }
 };

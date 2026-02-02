@@ -6,7 +6,7 @@ const {
     runningOnProd,
     getRandomAlphabets,
 } = require("./../utils/helper.util");
-const { catchAsyncErrors, AppError } = require("./error.controller");
+const { catchAsyncErrors, ClientError } = require("./error.controller");
 const User = require("./../models/user.model");
 const {
     JWT,
@@ -235,7 +235,7 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
     const { email, password } = req.body;
     if (!email || !password) {
         return next(
-            new AppError(
+            new ClientError(
                 "Please provide email and password!",
                 HTTP.BAD_REQUEST,
             ),
@@ -247,13 +247,13 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
 
     // [3] Check if User is verified
     if (user && !user.isVerified) {
-        return next(new AppError("User not verified!", HTTP.BAD_REQUEST));
+        return next(new ClientError("User not verified!", HTTP.BAD_REQUEST));
     }
 
     // [4] Check if User exist and password is correct
     if (!user || !(await user.verifyPassword(password, user.password))) {
         return next(
-            new AppError("Incorrect Email or Password", HTTP.UNAUTHORIZED),
+            new ClientError("Incorrect Email or Password", HTTP.UNAUTHORIZED),
         );
     }
 
@@ -272,12 +272,12 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-        return next(new AppError("No user found!", HTTP.NOT_FOUND));
+        return next(new ClientError("No user found!", HTTP.NOT_FOUND));
     }
 
     // [2] Check if User is verified
     if (user && !user.isVerified) {
-        return next(new AppError("User not verified!", HTTP.BAD_REQUEST));
+        return next(new ClientError("User not verified!", HTTP.BAD_REQUEST));
     }
 
     // [3] Generate Random Reset Token
@@ -326,7 +326,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     });
     if (!user) {
         return next(
-            new AppError("No user found with the email-address provided."),
+            new ClientError("No user found with the email-address provided."),
         );
     }
 
@@ -339,7 +339,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     ));
     if (isTokenInvalid) {
         return next(
-            new AppError("Invalid Password-Reset-Link!", HTTP.BAD_REQUEST),
+            new ClientError("Invalid Password-Reset-Link!", HTTP.BAD_REQUEST),
         );
     }
 
@@ -352,7 +352,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     const resetTokenExpiredAt = user.passwordResetTokenExpires.getTime();
     if (Date.now() > resetTokenExpiredAt) {
         return next(
-            new AppError("Password-Reset-Link expired!", HTTP.BAD_REQUEST),
+            new ClientError("Password-Reset-Link expired!", HTTP.BAD_REQUEST),
         );
     }
 
@@ -380,7 +380,10 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
     // [2] Check if POSTed passowrd is correct
     if (!(await user.verifyPassword(req.body.passwordCurrent, user.password))) {
         return next(
-            new AppError("Your current password is wrong.", HTTP.UNAUTHORIZED),
+            new ClientError(
+                "Your current password is wrong.",
+                HTTP.UNAUTHORIZED,
+            ),
         );
     }
 
@@ -439,7 +442,7 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
 
     if (!token) {
         return next(
-            new AppError("Please login to get access.", HTTP.UNAUTHORIZED),
+            new ClientError("Please login to get access.", HTTP.UNAUTHORIZED),
         );
     }
 
@@ -451,13 +454,15 @@ exports.authProtect = catchAsyncErrors(async function (req, res, next) {
        is trying to access stealing the token */
     const user = await User.findById(decoded._id);
     if (!user) {
-        return next(new AppError("The User donot exist.", HTTP.UNAUTHORIZED));
+        return next(
+            new ClientError("The User donot exist.", HTTP.UNAUTHORIZED),
+        );
     }
 
     // [4] Check if user changed password after the token was issued
     if (user.changedPasswordAfter(decoded.iat)) {
         return next(
-            new AppError(
+            new ClientError(
                 "Password changed! Please log in again!",
                 HTTP.UNAUTHORIZED,
             ),

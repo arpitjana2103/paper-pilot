@@ -1,7 +1,7 @@
 const { HTTP } = require("../configs/constants.config");
 const { runningOnDev, runningOnProd } = require("./../utils/helper.util");
 
-exports.AppError = class extends Error {
+exports.ClientError = class extends Error {
     constructor(message, statusCode) {
         super(message);
         this.statusCode = statusCode;
@@ -13,8 +13,8 @@ exports.AppError = class extends Error {
         /*
         Error.captureStackTrace(this, this.constructor) : Explanation
         -------------------------------------------------------------
-        this → refers to the current instance of your AppError.
-        this.constructor → refers to the AppError class itself.
+        this → refers to the current instance of your ClientError.
+        this.constructor → refers to the ClientError class itself.
 
         This tells JavaScript:
         "Start the stack trace from this point, and exclude everything above this constructor."
@@ -91,7 +91,7 @@ function sendErrForProd(err, res) {
 function handleCastErrorDB(err) {
     if (err.name === "CastError") {
         const message = `[Invalid] ${err.path}: "${err.value}" is not a valid value.`;
-        return new exports.AppError(message, HTTP.BAD_REQUEST);
+        return new exports.ClientError(message, HTTP.BAD_REQUEST);
     }
     return err;
 }
@@ -99,7 +99,7 @@ function handleCastErrorDB(err) {
 function handleDuplicateFieldsDB(err) {
     if (err.code === 11000) {
         const message = `[Duplicate field value] ${JSON.stringify(err.keyValue)}`;
-        return new exports.AppError(message, HTTP.BAD_REQUEST);
+        return new exports.ClientError(message, HTTP.BAD_REQUEST);
     }
     return err;
 }
@@ -107,7 +107,7 @@ function handleDuplicateFieldsDB(err) {
 function handleValidationError(err) {
     if (err.name === "ValidationError") {
         const { message } = err;
-        return new exports.AppError(message, HTTP.BAD_REQUEST);
+        return new exports.ClientError(message, HTTP.BAD_REQUEST);
     }
     return err;
 }
@@ -115,7 +115,7 @@ function handleValidationError(err) {
 function handleMulterError(err) {
     if (err.name === "MulterError") {
         const message = `field: ${err.field}, ${err.message}`;
-        return new exports.AppError(message, HTTP.BAD_REQUEST);
+        return new exports.ClientError(message, HTTP.BAD_REQUEST);
     }
     return err;
 }

@@ -4,7 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const {
     globalErrorHandeller,
-    AppError,
+    ClientError,
 } = require("./controllers/error.controller");
 
 const authRoutes = require("./routes/auth.route");
@@ -69,7 +69,7 @@ app.use("/api/v1/auth", authRoutes);
 
 // Handellling Unhandled Routes
 app.use((req, res, next) => {
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+    next(new ClientError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 // Global Error Handelling Meddleware
