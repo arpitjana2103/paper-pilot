@@ -17,6 +17,10 @@ const chunkSchema = new mongoose.Schema(
             type: String,
             required: [true, "ERR: text filed can't be blank"],
         },
+        pageNumber: {
+            type: Number,
+            default: null,
+        },
         embedding: {
             type: [Number],
             required: [true, "ERR: embedding filed can't be blank"],
@@ -28,20 +32,6 @@ const chunkSchema = new mongoose.Schema(
                     );
                 },
                 message: `ERR: Embedding must be an array of ${CHUNK_EMBEDDING_DIMENSION} numbers`,
-            },
-        },
-        metadata: {
-            pageNumber: {
-                type: Number,
-                default: null,
-            },
-            startChar: {
-                type: Number,
-                default: null,
-            },
-            endChar: {
-                type: Number,
-                default: null,
             },
         },
     },

@@ -8,7 +8,7 @@ const { HTTP, DOCUMENT_MAX_SIZE } = require("../configs/constants.config");
 /*
    @desc    Extracts text content and page count from a PDF file.
    @param   {string} filePath
-   @returns {Promise<{text:string, pageCount:number}>}
+   @returns {Promise<Array<{pageNumber:number, text:string, charCount:number}>>}
    @throws  {ClientError}
 */
 
@@ -51,13 +51,15 @@ exports.extractTextFromPDF = async function (filePath) {
             throw new ClientError("No text found in PDF", HTTP.BAD_REQUEST);
         }
 
-        return {
-            text: data.text,
-            metadata: {
-                totalCharacters: data.text.length,
-                totalPages: data.total,
-            },
-        };
+        const pages = data.pages.map(function (pageObj) {
+            return {
+                pageNumber: pageObj.num,
+                text: pageObj.text,
+                charCount: pageObj.text.length,
+            };
+        });
+
+        return pages;
     } catch (error) {
         console.log(error.message);
         if (error instanceof ClientError) {
