@@ -1,5 +1,7 @@
 const multer = require("multer");
 const fs = require("fs");
+const path = require("path");
+
 const { AppError } = require("../controllers/error.controller");
 const {
     PROFILE_PHOTO_UPLOAD_PATH,
@@ -13,16 +15,29 @@ const {
 const { sanitizeFilename } = require("../utils/helper.util");
 
 const genPath = function (dir) {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+    try {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+    } catch (error) {
+        console.error(`Failed to create directory ${dir}:`, error);
+        throw new Error(`Directory creation failed: ${error.message}`);
     }
 };
 
 const profileFilter = (req, file, cb) => {
-    if (file.mimetype !== "image/jpeg" && file.mimetype !== "image/png") {
+    const allowedMimeTypes = ["image/jpeg", "image/png"];
+    const allowedExtensions = ["jpg", "jpeg", "png"];
+
+    const ext = file.originalname.toLowerCase().split(".").pop();
+
+    if (
+        !allowedMimeTypes.includes(file.mimetype) ||
+        !allowedExtensions.includes(ext)
+    ) {
         return cb(
             new AppError(
-                `field: ${PROFILE_PHOTO_FIELDNAME}, Only image files (JPEG/PNG) are allowed`,
+                `field: ${PROFILE_PHOTO_FIELDNAME}, File: "${file.originalname}" - Only JPEG/PNG images are allowed`,
                 HTTP.BAD_REQUEST,
             ),
             false,
@@ -32,23 +47,28 @@ const profileFilter = (req, file, cb) => {
 };
 
 const documentFilter = (req, file, cb) => {
-    if (file.mimetype !== "application/pdf") {
+    const ext = file.originalname.toLowerCase().split(".").pop();
+
+    if (file.mimetype !== "application/pdf" || ext !== "pdf") {
         return cb(
             new AppError(
-                `field: ${DOCUMENT_PDF_FIELDNAME}, Expected: application/pdf. Received: ${file.mimetype}`,
+                `field: ${DOCUMENT_PDF_FIELDNAME}, File: "${file.originalname}" - Expected: application/pdf (.pdf). Received: ${file.mimetype}`,
                 HTTP.BAD_REQUEST,
             ),
             false,
         );
     }
-
     cb(null, true);
 };
 
 const profileStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        genPath(PROFILE_PHOTO_UPLOAD_PATH);
-        return cb(null, PROFILE_PHOTO_UPLOAD_PATH);
+        try {
+            genPath(PROFILE_PHOTO_UPLOAD_PATH);
+            return cb(null, PROFILE_PHOTO_UPLOAD_PATH);
+        } catch (error) {
+            return cb(error);
+        }
     },
     filename: function (req, file, cb) {
         const fileName = sanitizeFilename(file.originalname);
@@ -58,9 +78,17 @@ const profileStorage = multer.diskStorage({
 
 const documentStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const pdfUploadPath = `${DOCUMENT_PDF_UPLOAD_PATH}/${req.user._id}`;
-        genPath(pdfUploadPath);
-        return cb(null, pdfUploadPath);
+        try {
+            const pdfUploadPath = path.join(
+                DOCUMENT_PDF_UPLOAD_PATH,
+                req.user._id.toString(),
+            );
+
+            genPath(pdfUploadPath);
+            return cb(null, pdfUploadPath);
+        } catch (error) {
+            return cb(error);
+        }
     },
     filename: function (req, file, cb) {
         const fileName = sanitizeFilename(file.originalname);
