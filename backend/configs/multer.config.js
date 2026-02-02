@@ -111,4 +111,23 @@ const uploadDocument = multer({
     limits: { fileSize: DOCUMENT_PDF_MAX_SIZE },
 });
 
-module.exports = { uploadProfile, uploadDocument };
+/*
+    [MIDDLEWARE]
+    @description: Middleware to clean up uploaded files if an error occurs.
+    @param {Error} err - The error object.
+    @param {Object} req - The request object.
+    @param {Object} res - The response object.
+    @param {Function} next - The next middleware function.  
+*/
+
+const cleanupFileOnError = (err, req, res, next) => {
+    if (err && req.file) {
+        // Delete the uploaded file
+        fs.unlink(req.file.path, (unlinkErr) => {
+            if (unlinkErr) console.error("Failed to delete file:", unlinkErr);
+        });
+    }
+    next(err);
+};
+
+module.exports = { uploadProfile, uploadDocument, cleanupFileOnError };
