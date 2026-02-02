@@ -2,7 +2,7 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 
-const { ClientError } = require("../controllers/error.controller");
+const { ClientError } = require("../services/error.service");
 const {
     PROFILE_PHOTO_UPLOAD_PATH,
     DOCUMENT_PDF_UPLOAD_PATH,

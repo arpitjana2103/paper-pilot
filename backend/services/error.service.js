@@ -1,5 +1,5 @@
 const { HTTP } = require("../configs/constants.config");
-const { runningOnDev, runningOnProd } = require("./../utils/helper.util");
+const { runningOnDev, runningOnProd } = require("../utils/helper.util");
 
 exports.ClientError = class extends Error {
     constructor(message, statusCode) {
@@ -22,6 +22,13 @@ exports.ClientError = class extends Error {
     }
 };
 
+/*
+    [MIDDLEWARE]
+    @description: Wraps an async function to catch errors and pass them to the next middleware.
+    @param {Function} asyncFunc - The async function to wrap.
+    @returns {Function} - The wrapped function.
+*/
+
 exports.catchAsyncErrors = function (asyncFunc) {
     return function (req, res, next) {
         asyncFunc(req, res, next).catch(function (err) {
@@ -30,6 +37,15 @@ exports.catchAsyncErrors = function (asyncFunc) {
         });
     };
 };
+
+/*
+    [MIDDLEWARE]
+    @description: Global error handler middleware.
+    @param {Error} err - The error object.
+    @param {Object} req - The request object.
+    @param {Object} res - The response object.
+    @param {Function} next - The next middleware function.
+*/
 
 exports.globalErrorHandeller = function (err, req, res, next) {
     err.statusCode = err.statusCode || HTTP.SERVER_ERROR;

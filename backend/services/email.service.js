@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { ClientError } = require("./../controllers/error.controller");
+const { ClientError } = require("./error.service");
 
 const gmOptions = {
     service: "gmail",

@@ -6,7 +6,7 @@ const {
     runningOnProd,
     getRandomAlphabets,
 } = require("./../utils/helper.util");
-const { catchAsyncErrors, ClientError } = require("./error.controller");
+const { catchAsyncErrors, ClientError } = require("../services/error.service");
 const User = require("./../models/user.model");
 const {
     JWT,
