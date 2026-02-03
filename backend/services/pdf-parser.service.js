@@ -17,13 +17,13 @@ exports.extractTextFromPDF = async function (filePath) {
     try {
         // Validate file path
         if (!filePath || typeof filePath !== "string") {
-            throw new Error("Invalid file path provided");
+            throw new Error("pdfParsingErr: Invalid file path provided");
         }
 
         const dataBuffer = await fs.readFile(filePath);
 
         if (dataBuffer.length === 0) {
-            throw new Error("PDF file is empty");
+            throw new Error("pdfParsingErr: PDF file is empty");
         }
 
         const header = dataBuffer.toString("utf-8", 0, 5);

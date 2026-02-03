@@ -21,7 +21,9 @@ const genPath = function (dir) {
         }
     } catch (error) {
         console.error(`Failed to create directory ${dir}:`, error);
-        throw new Error(`Directory creation failed: ${error.message}`);
+        throw new Error(
+            `multerErr: Directory creation failed: ${error.message}`,
+        );
     }
 };
 
