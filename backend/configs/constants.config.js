@@ -21,7 +21,6 @@ module.exports = {
     DOCUMENT_PROCESS_MAX_RETRIES: 3,
 
     // Chunk Constants
-    CHUNK_EMBEDDING_DIMENSION: 768,
     CHUNK_SIZE: 1000,
     CHUNK_OVERLAP: 200,
 
