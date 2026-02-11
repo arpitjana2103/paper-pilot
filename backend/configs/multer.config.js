@@ -54,7 +54,7 @@ const documentFilter = (req, file, cb) => {
     if (file.mimetype !== "application/pdf" || ext !== "pdf") {
         return cb(
             new ClientError(
-                `field: ${DOCUMENT_PDF_FIELDNAME}, File: "${file.originalname}" - Expected: application/pdf (.pdf). Received: ${file.mimetype}`,
+                `field: ${DOCUMENT_PDF_FIELDNAME}, File: "${file.originalname}" - Expected: application/pdf,  Received: ${file.mimetype}`,
                 HTTP.BAD_REQUEST,
             ),
             false,

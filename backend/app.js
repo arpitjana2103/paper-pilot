@@ -5,9 +5,10 @@ const cookieParser = require("cookie-parser");
 const {
     globalErrorHandeller,
     ClientError,
-} = require("./controllers/error.controller");
+} = require("./services/error.service");
 
 const authRoutes = require("./routes/auth.route");
+const doucmentsRoutes = require("./routes/document.route");
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.get("/", (req, res) => {
 
 // Routes Middleware
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/documents", doucmentsRoutes);
 
 // Handellling Unhandled Routes
 app.use((req, res, next) => {

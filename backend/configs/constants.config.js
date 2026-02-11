@@ -21,8 +21,8 @@ module.exports = {
     DOCUMENT_PROCESS_MAX_RETRIES: 3,
 
     // Chunk Constants
-    CHUNK_SIZE: 1000,
-    CHUNK_OVERLAP: 200,
+    CHUNK_SIZE: 500,
+    CHUNK_OVERLAP: 100,
 
     OTP: {
         EXPIRES_IN: "5m",

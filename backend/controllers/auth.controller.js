@@ -38,10 +38,10 @@ const signAndSendToken = function (user, statusCode, req, res) {
 
     const cookieOptions = {
         expires: expiresAt(JWT.COOKIE_EXPIRES_IN),
-        secure: false,
+        secure: runningOnProd(),
         httpOnly: true,
     };
-    if (runningOnProd()) cookieOptions.secure = true;
+
     res.cookie("jwt", token, cookieOptions);
 
     return res.status(statusCode).json({
