@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { DOCUMENT_PROCESS_MAX_RETRIES } = require("../configs/constants.config");
+const { processDocument } = require("./../services/process-document.service");
 
 /*
 req.file be like this:
@@ -113,6 +114,38 @@ documentSchema.virtual("isFailed").get(function () {
 documentSchema.virtual("canRetry").get(function () {
     return this.status === "failed" && this.retryCount < this.maxRetries;
 });
+
+////////////////////////////////////////
+// DOCUMENT MIDDLEWARE / HOOK //////////
+
+documentSchema.pre("save", function () {
+    this._wasNew = this.isNew;
+});
+
+documentSchema.post("save", function (doc) {
+    if (doc._wasNew) {
+        processDocument(doc);
+    }
+});
+
+////////////////////////////////////////
+// Instance Methods ////////////////////
+
+documentSchema.methods.markAsReady = function ({ totalPages, totalChunks }) {
+    this.status = "ready";
+    this.totalPages = totalPages;
+    this.totalChunks = totalChunks;
+    this.processedAt = new Date();
+    this.lastError = null;
+    return this.save();
+};
+
+documentSchema.methods.markAsFailed = function (errorMessage) {
+    this.status = "failed";
+    this.lastError = errorMessage;
+    this.processedAt = new Date();
+    return this.save();
+};
 
 const Document = mongoose.model("Document", documentSchema);
 module.exports = Document;

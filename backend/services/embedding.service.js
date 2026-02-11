@@ -6,7 +6,7 @@ const { genAI, EMBEDDING_CONFIG } = require("./../configs/gemini.config");
     @returns {Promise<Array<number>>} - The embedding for the text
 */
 
-exports.generateEmbedding = async function (text, taskType) {
+exports.generateEmbedding = async function ({ text, taskType }) {
     try {
         // Validate input
         if (!text || typeof text !== "string") {
