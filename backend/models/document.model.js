@@ -5,14 +5,14 @@ const { processDocument } = require("./../services/process-document.service");
 /*
 req.file be like this:
 {
-  fieldname: 'profile-photo',
-  originalname: 'profile.jpg',
-  encoding: '7bit',
-  mimetype: 'image/jpeg',
-  destination: 'C:\\Users\\Arpit Jana\\Documents\\se-25-26\\Projects\\paper-pilot\\backend\\uploads\\profiles',
-  filename: '6978f28cb40714461bea8216-profile.jpg',
-  path: 'C:\\Users\\Arpit Jana\\Documents\\se-25-26\\Projects\\paper-pilot\\backend\\uploads\\profiles\\6978f28cb40714461bea8216-profile.jpg',    
-  size: 98569
+  fieldname: '<form-field-name>',
+  originalname: '<client-defined-filename>',
+  encoding: '<encoding-type>',
+  mimetype: '<file-mime-type>',
+  destination: '<destination-dir-at-server>',
+  filename: '<server-generated-unique-filename>',
+  path: '<full-path-to-file-on-server>',
+  size: <file-size-in-bytes>
 }
 */
 
@@ -100,6 +100,8 @@ const documentSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
+documentSchema.index({ userId: 1 });
+
 ////////////////////////////////////////
 // VIRTUAL FIELDS //////////////////////
 
@@ -118,9 +120,19 @@ documentSchema.virtual("canRetry").get(function () {
 ////////////////////////////////////////
 // DOCUMENT MIDDLEWARE / HOOK //////////
 
+/*
+    @description Capture whether the document is newly created
+    Used later in post-save hook to trigger processing only once
+*/
+
 documentSchema.pre("save", function () {
     this._wasNew = this.isNew;
 });
+
+/*
+    @description Trigger document processing after initial creation
+    Runs only when the document is first saved to DB
+*/
 
 documentSchema.post("save", function (doc) {
     if (doc._wasNew) {
@@ -130,6 +142,15 @@ documentSchema.post("save", function (doc) {
 
 ////////////////////////////////////////
 // Instance Methods ////////////////////
+// These Methods will be available for all the Model instances
+
+/*
+    @description Mark document as ready after successful processing
+    @param       {Object} params - Processing metadata
+    @param       {Number} params.totalPages - Total pages extracted from document
+    @param       {Number} params.totalChunks - Total chunks generated
+    @returns     {Promise<Document>} - A promise that resolves to the updated document
+*/
 
 documentSchema.methods.markAsReady = function ({ totalPages, totalChunks }) {
     this.status = "ready";
@@ -139,6 +160,12 @@ documentSchema.methods.markAsReady = function ({ totalPages, totalChunks }) {
     this.lastError = null;
     return this.save();
 };
+
+/*
+    @description Mark document as failed when processing encounters an error
+    @param       {String} errorMessage - Error message describing the failure
+    @returns     {Promise<Document>} - A promise that resolves to the updated document
+*/
 
 documentSchema.methods.markAsFailed = function (errorMessage) {
     this.status = "failed";

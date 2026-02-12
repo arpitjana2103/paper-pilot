@@ -42,39 +42,6 @@ const chunkSchema = new mongoose.Schema(
 
 chunkSchema.index({ documentId: 1 });
 
-////////////////////////////////////////
-// Instance Method /////////////////////
-
-/*
-    @description Find all chunks by documentId
-    @param       {String} docuementId - The documentId to search for
-    @returns     {Promise<Array>} - A promise that resolves to an array of chunks
-*/
-
-chunkSchema.methods.findByDocument = function (documentId) {
-    return this.find({ documentId }).sort({ chunkIndex: 1 }).select("-__v");
-};
-
-/*
-    @description Count chunks by documentId
-    @param       {String} documentId - The documentId to search for
-    @returns     {Promise<Number>} - A promise that resolves to the number of chunks
-*/
-
-chunkSchema.static.countByDocument = function (documentId) {
-    return this.countDocuments({ documentId });
-};
-
-/*
-    @description Delete all chunks by documentId
-    @param       {String} documentId - The documentId to search for
-    @returns     {Promise<Number>} - A promise that resolves to the number of chunks deleted
-*/
-
-chunkSchema.static.deleteByDocument = function (documentId) {
-    return this.deleteMany({ documentId });
-};
-
 const Chunk = mongoose.model("Chunk", chunkSchema);
 module.exports = Chunk;
 

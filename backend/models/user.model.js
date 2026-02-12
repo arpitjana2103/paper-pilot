@@ -51,10 +51,14 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: [true, "ERR: confirm-password field can't be blank"],
             validate: {
-                /* [ Note : 
-                Validator runs only on document creation (save/create), not for updates.
-                'this' refers to the current doc for NEW docs only.
-            */
+                /*
+	                Note:
+	                This is a cross-field custom validator that compares password
+	                and passwordConfirm. It works only during document save/create
+	                because it relies on `this` being the mongoose document.
+	                It will NOT work in update queries (findOneAndUpdate, updateOne, etc)
+	                since `this` is not the document there.
+                */
                 validator: function (passwordConfirm) {
                     return this.password === passwordConfirm;
                 },
@@ -78,57 +82,74 @@ const userSchema = new mongoose.Schema(
     },
 );
 
-// Create TTL index - this tells MongoDB to auto-delete documents
-// expireAfterSeconds: 2 means delete document 2 seconds after expiredAt
+/*
+    @description TTL index to automatically delete expired users
+    MongoDB removes documents once expireAt is reached.
+    expireAfterSeconds adds a small buffer before deletion.
+*/
+
 userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 2 });
 
 ////////////////////////////////////////
 // DOCUMENT MIDDLEWARE / HOOK //////////
 
-// runs before Model.prototype.save() and Model.create()
+/*
+    @description Handle verification expiry logic
+    - Sets expireAt for new unverified users
+    - Removes expireAt once user becomes verified
+*/
+
 userSchema.pre("save", function () {
-    // Set expireAt for new unverified users
     if (this.isNew && !this.isVerified) {
         this.expireAt = expiresAt(UNVERIFIED_USER_EXPIRES_IN);
     }
 
-    // Remove expireAt when user gets verified
     if (this.isModified("isVerified") && this.isVerified) {
         this.expireAt = undefined;
     }
 });
+
+/*
+    @description Hash password and update passwordChangedAt timestamp
+*/
 
 userSchema.pre("save", async function () {
     // Only run the Function if the password has been changed
     // For Ex. ( if user is changing the email, no need to hash the password in that case)
     if (!this.isModified("password")) return;
 
-    // Hash password
     this.password = await bcrypt.hash(this.password, 12);
     this.passwordConfirm = undefined;
 
-    // Set passwordChangedAt timestamp (skip if document is new)
     if (!this.isNew) {
         this.passwordChangedAt = new Date();
     }
 });
 
+/*
+    @description Hash email OTP before persisting
+*/
+
 userSchema.pre("save", async function () {
     if (!this.isModified("emailOtp") || !this.emailOtp) return;
-
-    // Hash OTP
     this.emailOtp = await bcrypt.hash(this.emailOtp, 12);
 });
+
+/*
+    @description Hash password reset token before persisting
+*/
 
 userSchema.pre("save", async function () {
     if (!this.isModified("passwordResetToken") || !this.passwordResetToken)
         return;
 
-    // Hash passwordResetToken
     this.passwordResetToken = await bcrypt.hash(this.passwordResetToken, 12);
 });
 
-// runs after Model.prototype.save() and Model.create()
+/*
+    @description Remove sensitive fields from document after save
+*/
+
 userSchema.post("save", function (doc, next) {
     doc.password = undefined;
     doc.emailOtpExpires = undefined;
@@ -139,7 +160,7 @@ userSchema.post("save", function (doc, next) {
 
 ////////////////////////////////////////
 // Instance Method /////////////////////
-// These Methods will be available for all the Documents
+// These Methods will be available for all the Model instances
 
 /*
     @description Verify bcrypt hash
