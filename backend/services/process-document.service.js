@@ -4,6 +4,12 @@ const { createChunks } = require("./chunking.service");
 const { generateEmbedding } = require("./embedding.service");
 const { extractTextFromPDF } = require("./pdf-parser.service");
 
+/*
+    @description Process uploaded document
+    @param       {Document} document - Mongoose document instance
+    @returns     {Promise<void>}
+*/
+
 exports.processDocument = async function (document) {
     try {
         // [1] Extract Text From Document-PDF

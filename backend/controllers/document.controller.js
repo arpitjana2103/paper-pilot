@@ -1,6 +1,13 @@
 const { HTTP } = require("../configs/constants.config");
-const Document = require("../models/Document.model");
+const Document = require("../models/document.model");
 const { catchAsyncErrors, ClientError } = require("../services/error.service");
+
+/*
+    @description Create new document record after file upload
+    @route       POST /documents
+    @access      Private
+    @middleware  [authProtect]
+*/
 
 exports.createDocument = catchAsyncErrors(async function (req, res, next) {
     if (!req.file) {

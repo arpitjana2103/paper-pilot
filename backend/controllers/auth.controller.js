@@ -24,6 +24,12 @@ const {
     createPassResetMessage,
 } = require("./../utils/email-templates.util");
 
+/*
+    @description Sign JWT token
+    @param       {Object} payload - JWT payload
+    @returns     {String} - Signed JWT token
+*/
+
 const signToken = function (payload) {
     const jwtSecreatKey = JWT.SECRET;
     const jwtExpiresIn = {
@@ -32,6 +38,15 @@ const signToken = function (payload) {
     const token = jwt.sign(payload, jwtSecreatKey, jwtExpiresIn);
     return token;
 };
+
+/*
+    @description Create JWT cookie and send auth response
+    @param       {Object} user - User document
+    @param       {Number} statusCode - HTTP status code
+    @param       {Object} req - Express request
+    @param       {Object} res - Express response
+    @returns     {Response}
+*/
 
 const signAndSendToken = function (user, statusCode, req, res) {
     const token = signToken({ _id: user._id });
@@ -61,7 +76,7 @@ const signAndSendToken = function (user, statusCode, req, res) {
 
 /*
     @desc    User Signup
-    @route   POST /api/v1/auth/signup
+    @route   POST /auth/signup
     @access  Public
 */
 
@@ -123,7 +138,7 @@ exports.signup = catchAsyncErrors(async function (req, res, next) {
 
 /*
     @desc    resendOTP
-    @route   POST /api/v1/auth/resend-otp
+    @route   POST /auth/resend-otp
     @access  Public
 */
 
@@ -170,7 +185,7 @@ exports.resendOTP = catchAsyncErrors(async function (req, res, next) {
 
 /*
     @desc    Verify Email
-    @route   POST /api/v1/auth/verify-email
+    @route   POST /auth/verify-email
     @access  Public
 */
 
@@ -226,7 +241,7 @@ exports.verifyEmail = catchAsyncErrors(async function (req, res, next) {
 
 /*
     @desc    Login user
-    @route   POST /api/v1/auth/login
+    @route   POST /auth/login
     @access  Public
 */
 
@@ -263,7 +278,7 @@ exports.login = catchAsyncErrors(async function (req, res, next) {
 
 /*
     @desc    Forgot Password
-    @route   POST /api/v1/auth/forgot-passowrd
+    @route   POST /auth/forgot-passowrd
     @access  Public
 */
 
@@ -314,7 +329,7 @@ exports.forgotPassword = catchAsyncErrors(async function (req, res, next) {
 
 /*
     @desc    Reset Password
-    @route   POST /api/v1/auth/reset-passowrd
+    @route   POST /auth/reset-passowrd/:token
     @access  Public
 */
 
@@ -344,7 +359,7 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
     }
 
     // [4] Check if Token Expired
-    /* Exmple : 
+    /* Exmple :
        let say user forgetPassword at 8.00
        then passwordResetLink is valid upto 8.10
        if Date.now() is 8.15 then user is not allowed to reset password with that link */
@@ -368,9 +383,10 @@ exports.resetPassword = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
-    @desc    Update Password
-    @route   POST /api/v1/auth/update-passowrd
-    @access  Privet
+    @desc     Update Password
+    @route    POST /auth/update-passowrd
+    @access   Private
+    @middeare [authProtect]
 */
 
 exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
@@ -397,9 +413,10 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
-    @desc    Update Profile
-    @route   PATCH /api/v1/auth/update-profile
-    @access  Privet
+    @desc     Update Profile
+    @route    PATCH /auth/update-profile
+    @access   Private
+    @middeare [authProtect], [uploadProfile.single(PROFILE_PHOTE_FILELDNAME)]
 */
 
 exports.updateProfile = catchAsyncErrors(async function (req, res, next) {
@@ -428,7 +445,7 @@ exports.updateProfile = catchAsyncErrors(async function (req, res, next) {
 /*
     [MIDDLEWARE]
     @desc    Auth Protect Middleware
-    @access  Privet
+    @access  Private
 */
 
 exports.authProtect = catchAsyncErrors(async function (req, res, next) {
