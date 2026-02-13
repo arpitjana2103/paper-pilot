@@ -13,6 +13,7 @@ router.use(authController.authProtect);
 
 router
     .route("/")
+    .get(documentController.getDocuments)
     .post(
         uploadDocument.single(DOCUMENT_PDF_FIELDNAME),
         documentController.createDocument,

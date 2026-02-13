@@ -160,7 +160,8 @@ userSchema.post("save", function (doc, next) {
 
 ////////////////////////////////////////
 // Instance Method /////////////////////
-// These Methods will be available for all the Model instances
+// These Methods will be available for all the Model instances (i.e documents)
+// (called like: document.methodName())
 
 /*
     @description Verify bcrypt hash

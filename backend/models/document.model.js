@@ -143,6 +143,7 @@ documentSchema.post("save", function (doc) {
 ////////////////////////////////////////
 // Instance Methods ////////////////////
 // These Methods will be available for all the Model instances
+// (called like: document.methodName())
 
 /*
     @description Mark document as ready after successful processing
@@ -172,6 +173,27 @@ documentSchema.methods.markAsFailed = function (errorMessage) {
     this.lastError = errorMessage;
     this.processedAt = new Date();
     return this.save();
+};
+
+////////////////////////////////////////
+// Static Methods //////////////////////
+// These methods will be available on the Model itself
+// (called like: Model.methodName())
+
+/*
+    @description Fetch documents belonging to a specific user with optional filters
+    @param       {String|ObjectId} userId - The ID of the user who owns the documents
+    @param       {Object} [options={}] - Optional query filters
+    @param       {String} [options.status] - Filter documents by status
+    @returns     {Query<Document[]>} - A mongoose query that resolves to an array of documents
+*/
+
+documentSchema.statics.findByUser = function (userId, options = {}) {
+    const query = this.find({ userId: userId });
+    if (options.status) {
+        query.where("status").equals(options.status);
+    }
+    return query;
 };
 
 const Document = mongoose.model("Document", documentSchema);

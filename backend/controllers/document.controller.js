@@ -37,6 +37,28 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
+	@description Get all documents belongs to logged in user
+	@route 		 GET /documents?status={value}
+	@access      Private
+	@middleware  [authProtect]
+*/
+
+exports.getDocuments = catchAsyncErrors(async function (req, res, next) {
+    const userId = req.user._id;
+    const { status } = req.query;
+
+    const documents = await Document.findByUser(userId, { status }).select(
+        "_id originalName fileSize status totalPages uploadedAt lastError canRetry",
+    );
+
+    return res.status(HTTP.OK).json({
+        status: "success",
+        count: documents.length,
+        documents: documents,
+    });
+});
+
+/*
 	[MIDDLEWARE]
 	@description Validate if the docuemnt belongs to logged in user
 	@access      Private
