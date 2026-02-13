@@ -413,10 +413,10 @@ exports.updatePassword = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
-    @desc     Update Profile
-    @route    PATCH /auth/update-profile
-    @access   Private
-    @middeare [authProtect], [uploadProfile.single(PROFILE_PHOTE_FILELDNAME)]
+    @desc       Update Profile
+    @route      PATCH /auth/update-profile
+    @access     Private
+    @middleware [authProtect], [uploadProfile.single(PROFILE_PHOTE_FILELDNAME)]
 */
 
 exports.updateProfile = catchAsyncErrors(async function (req, res, next) {

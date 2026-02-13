@@ -6,7 +6,7 @@ const { catchAsyncErrors, ClientError } = require("../services/error.service");
     @description Create new document record after file upload
     @route       POST /documents
     @access      Private
-    @middleware  [authProtect]
+    @middleware  [authProtect], [uploadDocument.single(DOCUMENT_PDF_FIELDNAME)]
 */
 
 exports.createDocument = catchAsyncErrors(async function (req, res, next) {
@@ -35,3 +35,28 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
         },
     });
 });
+
+/*
+	[MIDDLEWARE]
+	@description Validate if the docuemnt belongs to logged in user
+	@access      Private
+*/
+
+exports.validateDocumentOwnership = catchAsyncErrors(
+    async function (req, res, next) {
+        const documentId = req.params.id;
+        const userId = req.user._id;
+
+        const document = await Document.findById(documentId);
+
+        if (!document)
+            throw new ClientError("Document not found", HTTP.NOT_FOUND);
+
+        if (document.userId.toString() !== userId.toString()) {
+            throw new ClientError("Access denied", HTTP.FORBIDDEN);
+        }
+
+        req.document = document;
+        next();
+    },
+);
