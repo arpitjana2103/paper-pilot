@@ -98,14 +98,27 @@ const documentStorage = multer.diskStorage({
     },
 });
 
-// req.body & req.file parser Middleware
-// [ note: Handles and parses incoming "multipart/form-data" into req.file & req.body ]
+/*
+    [MIDDLEWARE FACTORY]
+    @description Creates a Multer upload middleware for handling profile photo uploads.
+                 Parses incoming "multipart/form-data" and attaches the file to `req.file`
+                 and text fields to `req.body`.
+    @returns     {Object} Multer instance. Use `.single()`, `.array()`, or `.fields()` to create middleware.
+*/
 
 const uploadProfile = multer({
     fileFilter: profileFilter,
     storage: profileStorage,
     limits: { fileSize: PROFILE_PHOTO_MAX_SIZE },
 });
+
+/*
+    [MIDDLEWARE FACTORY]
+    @description Creates a Multer upload middleware for handling document PDF uploads.
+                 Parses incoming "multipart/form-data" and attaches the file to `req.file`
+                 and text fields to `req.body`.
+    @returns     {Object} Multer instance. Use `.single()`, `.array()`, or `.fields()` to create middleware.
+*/
 
 const uploadDocument = multer({
     fileFilter: documentFilter,
@@ -119,7 +132,7 @@ const uploadDocument = multer({
     @param {Error} err - The error object.
     @param {Object} req - The request object.
     @param {Object} res - The response object.
-    @param {Function} next - The next middleware function.  
+    @param {Function} next - The next middleware function.
 */
 
 const cleanupFileOnError = (err, req, res, next) => {
