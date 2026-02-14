@@ -27,11 +27,13 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
     return res.status(HTTP.CREATED).json({
         status: "success",
         message: "Document created successfully",
-        document: {
-            id: document._id,
-            originalName: document.originalName,
-            status: document.status,
-            uploadedAt: document.uploadedAt,
+        data: {
+            document: {
+                id: document._id,
+                originalName: document.originalName,
+                status: document.status,
+                uploadedAt: document.uploadedAt,
+            },
         },
     });
 });
@@ -54,7 +56,31 @@ exports.getDocuments = catchAsyncErrors(async function (req, res, next) {
     return res.status(HTTP.OK).json({
         status: "success",
         count: documents.length,
-        documents: documents,
+        data: {
+            documents: documents,
+        },
+    });
+});
+
+/*
+	@description Get document status ( for polling )
+	@route 		 Get /documents/:id/status
+	@Access		 Private
+	@middleware  [authProtect], [validateDocumentOwnership]
+*/
+
+exports.getDocumentStatus = catchAsyncErrors(async function (req, res, next) {
+    const document = req.document;
+
+    return res.status(HTTP.OK).json({
+        status: "success",
+        data: {
+            status: {
+                id: document._id,
+                status: document.status,
+                lastError: document.lastError ?? undefined,
+            },
+        },
     });
 });
 

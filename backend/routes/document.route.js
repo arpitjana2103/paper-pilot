@@ -19,4 +19,11 @@ router
         documentController.createDocument,
     );
 
+router
+    .route("/:id/status")
+    .get(
+        documentController.validateDocumentOwnership,
+        documentController.getDocumentStatus,
+    );
+
 module.exports = router;
