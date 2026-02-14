@@ -1,5 +1,3 @@
-const path = require("path");
-
 const { HTTP, UPLOAD_BASE_URL } = require("../configs/constants.config");
 const Document = require("../models/document.model");
 const Chunk = require("../models/chunk.model");
@@ -19,7 +17,6 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
     }
 
     const fileUrl = `${UPLOAD_BASE_URL}/documents/${req.user._id.toString()}/${req.file.filename}`;
-    console.log(fileUrl);
 
     const document = await Document.create({
         userId: req.user._id,
