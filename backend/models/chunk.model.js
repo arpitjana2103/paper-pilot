@@ -42,55 +42,20 @@ const chunkSchema = new mongoose.Schema(
 
 chunkSchema.index({ documentId: 1 });
 
-const Chunk = mongoose.model("Chunk", chunkSchema);
-module.exports = Chunk;
+////////////////////////////////////////
+// Static Methods //////////////////////
+// These methods will be available on the Model itself
+// (called like: Model.methodName())
 
 /*
- // Chunk 0 - Page 1
- {
-   _id: ObjectId("65b8f9a2c4d5e6f7a8b9c0d1"),
-   documentId: ObjectId("65b8f9a1c4d5e6f7a8b9c0d0"),
-   chunkIndex: 0,
-   text: "Introduction to Machine Learning\n\nMachine learning is a subset of artificial intelligence...",
-   embedding: [0.023, -0.012, 0.045, // ...765 more ],
-   metadata: {
-     pageNumber: 1,
-     startChar: 0,
-     endChar: 487
-   },
-   createdAt: ISODate("2024-01-30T10:30:00.000Z"),
-   updatedAt: ISODate("2024-01-30T10:30:00.000Z")
- }
-
- // Chunk 1 - Page 1 (overlap with Chunk 0)
- {
-   _id: ObjectId("65b8f9a2c4d5e6f7a8b9c0d2"),
-   documentId: ObjectId("65b8f9a1c4d5e6f7a8b9c0d0"),
-   chunkIndex: 1,
-   text: "look for patterns in data and make better decisions in the future.\n\nTypes of Machine Learning\n\nThere are three main types of machine learning: supervised learning, unsupervised learning, and reinforcement learning. Supervised learning involves training a model on labeled data...",
-   embedding: [0.034, -0.023, 0.056, // ...765 more ],
-   metadata: {
-     pageNumber: 1,
-     startChar: 287,  // Note: overlap with previous chunk
-     endChar: 874
-   },
-   createdAt: ISODate("2024-01-30T10:30:01.000Z"),
-   updatedAt: ISODate("2024-01-30T10:30:01.000Z")
- }
-
- // Chunk 2 - Page 2
- {
-   _id: ObjectId("65b8f9a2c4d5e6f7a8b9c0d3"),
-   documentId: ObjectId("65b8f9a1c4d5e6f7a8b9c0d0"),
-   chunkIndex: 2,
-   text: "Supervised learning involves training a model on labeled data where the correct output is known. The algorithm learns to map inputs to outputs based on example input-output pairs...",
-   embedding: [0.045, -0.034, 0.067, // ...765 more ],
-   metadata: {
-     pageNumber: 2,
-     startChar: 674,
-     endChar: 1361
-   },
-   createdAt: ISODate("2024-01-30T10:30:02.000Z"),
-   updatedAt: ISODate("2024-01-30T10:30:02.000Z")
- }
+    @description Delete all chunks belonging to a specific document
+    @param       {String|ObjectId} documentId - Id of the document
+    @returns     {Promise<Object>} - MongoDB delete result
 */
+
+chunkSchema.statics.deleteChunksByDocumentId = function (documentId) {
+    return this.deleteMany({ documentId: documentId });
+};
+
+const Chunk = mongoose.model("Chunk", chunkSchema);
+module.exports = Chunk;

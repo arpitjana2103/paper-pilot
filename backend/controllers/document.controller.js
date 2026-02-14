@@ -1,6 +1,8 @@
 const { HTTP } = require("../configs/constants.config");
 const Document = require("../models/document.model");
+const Chunk = require("../models/chunk.model");
 const { catchAsyncErrors, ClientError } = require("../services/error.service");
+const { removeFile } = require("../configs/multer.config");
 
 /*
     @description Create new document record after file upload
@@ -81,6 +83,29 @@ exports.getDocumentStatus = catchAsyncErrors(async function (req, res, next) {
                 lastError: document.lastError ?? undefined,
             },
         },
+    });
+});
+
+/*
+	@description Delete document
+	@route 	     DELETE /api/doucments/:id
+	@middleware  [authProtect], [validateDocumentOwnership]
+*/
+
+exports.deleteDocument = catchAsyncErrors(async function (req, res, next) {
+    const document = req.document;
+
+    // [1] Delte Chunks of the doucment from db
+    await Chunk.deleteChunksByDocumentId(document._id);
+
+    // [2] Delte file from memory
+    removeFile(document.filePath);
+
+    // [3] Delete the document from db
+    await Document.findByIdAndDelete(document._id);
+
+    return res.status(HTTP.OK).json({
+        status: "success",
     });
 });
 

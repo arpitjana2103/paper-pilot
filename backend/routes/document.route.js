@@ -24,6 +24,13 @@ router
     );
 
 router
+    .route("/:id")
+    .delete(
+        documentController.validateDocumentOwnership,
+        documentController.deleteDocument,
+    );
+
+router
     .route("/:id/status")
     .get(
         documentController.validateDocumentOwnership,
