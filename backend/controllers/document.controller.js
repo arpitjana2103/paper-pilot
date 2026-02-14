@@ -1,4 +1,6 @@
-const { HTTP } = require("../configs/constants.config");
+const path = require("path");
+
+const { HTTP, UPLOAD_BASE_URL } = require("../configs/constants.config");
 const Document = require("../models/document.model");
 const Chunk = require("../models/chunk.model");
 const { catchAsyncErrors, ClientError } = require("../services/error.service");
@@ -16,12 +18,16 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
         throw new ClientError("No file found to upload", HTTP.BAD_REQUEST);
     }
 
+    const fileUrl = `${UPLOAD_BASE_URL}/documents/${req.user._id.toString()}/${req.file.filename}`;
+    console.log(fileUrl);
+
     const document = await Document.create({
         userId: req.user._id,
         fileName: req.file.filename,
         originalName: req.file.originalname,
         title: req.file.originalname,
         filePath: req.file.path,
+        fileUrl: fileUrl,
         fileSize: { value: req.file.size, unit: "byte" },
         mimeType: req.file.mimetype,
         status: "processing",
@@ -35,6 +41,7 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
                 id: document._id,
                 title: document.title,
                 originalName: document.originalName,
+                fileUrl: document.fileUrl,
                 status: document.status,
                 uploadedAt: document.uploadedAt,
             },

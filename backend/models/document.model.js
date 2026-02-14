@@ -44,6 +44,9 @@ const documentSchema = new mongoose.Schema(
             type: String,
             required: [true, "ERR: filePath filed can't be blank"],
         },
+        fileUrl: {
+            type: String,
+        },
         fileSize: {
             value: {
                 type: Number,
