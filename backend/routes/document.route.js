@@ -28,6 +28,10 @@ router
     .delete(
         documentController.validateDocumentOwnership,
         documentController.deleteDocument,
+    )
+    .patch(
+        documentController.validateDocumentOwnership,
+        documentController.updateDocument,
     );
 
 router

@@ -5,12 +5,12 @@ const { processDocument } = require("./../services/process-document.service");
 /*
 req.file be like this:
 {
-  fieldname: '<form-field-name>',
+  filename: '<server-generated-unique-filename>',
   originalname: '<client-defined-filename>',
+  fieldname: '<form-field-name>',
   encoding: '<encoding-type>',
   mimetype: '<file-mime-type>',
   destination: '<destination-dir-at-server>',
-  filename: '<server-generated-unique-filename>',
   path: '<full-path-to-file-on-server>',
   size: <file-size-in-bytes>
 }
@@ -27,6 +27,13 @@ const documentSchema = new mongoose.Schema(
             type: String,
             required: [true, "ERR: fileName filed can't be blank"],
             trim: true,
+        },
+        title: {
+            type: String,
+            trim: true,
+            required: [true, "ERR: title filed can't be blank"],
+            minlength: [1, "ERR: Invalid field value"],
+            maxlength: [20, "ERR: Title cannot be more than 20 characters"],
         },
         originalName: {
             type: String,

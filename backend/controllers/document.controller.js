@@ -20,6 +20,7 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
         userId: req.user._id,
         fileName: req.file.filename,
         originalName: req.file.originalname,
+        title: req.file.originalname,
         filePath: req.file.path,
         fileSize: { value: req.file.size, unit: "byte" },
         mimeType: req.file.mimetype,
@@ -32,6 +33,7 @@ exports.createDocument = catchAsyncErrors(async function (req, res, next) {
         data: {
             document: {
                 id: document._id,
+                title: document.title,
                 originalName: document.originalName,
                 status: document.status,
                 uploadedAt: document.uploadedAt,
@@ -87,8 +89,33 @@ exports.getDocumentStatus = catchAsyncErrors(async function (req, res, next) {
 });
 
 /*
+	@description Update Document ( titel )
+	@route 		 PATCH /documents/:id
+	@middleware  [authProtect], [validateDocumentOwnership]
+*/
+
+exports.updateDocument = catchAsyncErrors(async function (req, res, next) {
+    const document = await Document.findByIdAndUpdate(
+        req.document._id,
+        { title: req.body.title },
+        { new: true, runValidators: true },
+    );
+
+    return res.status(HTTP.OK).json({
+        status: "success",
+        message: "Document updated successfully",
+        data: {
+            document: {
+                id: document._id,
+                title: document.title,
+            },
+        },
+    });
+});
+
+/*
 	@description Delete document
-	@route 	     DELETE /api/doucments/:id
+	@route 	     DELETE /doucments/:id
 	@middleware  [authProtect], [validateDocumentOwnership]
 */
 
