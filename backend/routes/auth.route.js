@@ -1,7 +1,10 @@
 const express = require("express");
 const authController = require("../controllers/auth.controller");
 const router = express.Router();
-const { uploadProfile } = require("../configs/multer.config");
+const {
+    uploadProfile,
+    cleanupFileOnError,
+} = require("../configs/multer.config");
 const { PROFILE_PHOTO_FIELDNAME } = require("../configs/constants.config");
 
 router.route("/signup").post(authController.signup);
@@ -20,6 +23,7 @@ router
     .patch(
         uploadProfile.single(PROFILE_PHOTO_FIELDNAME),
         authController.updateProfile,
+        cleanupFileOnError,
     );
 
 module.exports = router;
