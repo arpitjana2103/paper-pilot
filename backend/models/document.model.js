@@ -110,7 +110,7 @@ const documentSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
-documentSchema.index({ userId: 1 });
+documentSchema.index({ userId: 1, status: 1 });
 
 ////////////////////////////////////////
 // VIRTUAL FIELDS //////////////////////

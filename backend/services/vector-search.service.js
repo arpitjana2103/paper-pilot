@@ -1,9 +1,27 @@
+const mongoose = require("mongoose");
 const Chunk = require("../models/chunk.model");
+
+/*
+    @description Perform vector similarity search on document chunks
+    Uses MongoDB $vectorSearch to find most relevant chunks
+    based on query embedding within a specific document.
+    @param       {Object} params
+    @param       {String|ObjectId} params.documentId - Target document id
+    @param       {Number[]} params.queryEmbedding - Embedding vector (length: 768)
+    @returns     {Promise<Array>} - Array of matched chunks with score
+*/
 
 exports.vectorSearch = async function ({ documentId, queryEmbedding }) {
     try {
         if (!documentId) {
             throw new Error("Document ID is required");
+        }
+
+        if (!(documentId instanceof mongoose.Types.ObjectId)) {
+            if (!mongoose.Types.ObjectId.isValid(documentId)) {
+                throw new Error("Invalid Document ID");
+            }
+            documentId = new mongoose.Types.ObjectId(documentId);
         }
 
         if (!Array.isArray(queryEmbedding) || queryEmbedding.length !== 768) {
