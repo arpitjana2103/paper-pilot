@@ -33,7 +33,7 @@ const documentSchema = new mongoose.Schema(
             trim: true,
             required: [true, "ERR: title filed can't be blank"],
             minlength: [1, "ERR: Invalid field value"],
-            maxlength: [20, "ERR: Title cannot be more than 20 characters"],
+            maxlength: [40, "ERR: Title cannot be more than 40 characters"],
         },
         originalName: {
             type: String,

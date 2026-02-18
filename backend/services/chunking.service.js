@@ -4,7 +4,7 @@ const { CHUNK_SIZE, CHUNK_OVERLAP } = require("../configs/constants.config");
 
 /*
     @desc    Split text into chunks using RecursiveCharacterTextSplitter
-    @param   {string} text 
+    @param   {string} text
     @returns {Promise<string[]>}
 */
 
@@ -29,14 +29,18 @@ async function splitTextIntoChunks(text) {
 exports.createChunks = async function (pages) {
     try {
         let res = [];
+        let pageTextToOverlap = "";
         for (const { pageNumber, text } of pages) {
+            if (!text) continue;
             const cleanedText = text
                 .replace(/\n(?!\n)/g, " ") // Single \n becomes space
                 .replace(/\n{2,}/g, "\n\n") // Multiple \n becomes exactly \n\n
                 .replace(/ {2,}/g, " ") // Multiple spaces become single space
                 .trim();
-            if (!text) continue;
-            const chunks = await splitTextIntoChunks(cleanedText);
+            const chunks = await splitTextIntoChunks(
+                pageTextToOverlap + " --###-- " + cleanedText,
+            );
+            pageTextToOverlap = cleanedText.slice(-200);
             const mappedChunks = chunks.map(function (chunk, index) {
                 return {
                     chunkIndex: index,
